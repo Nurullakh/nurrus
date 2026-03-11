@@ -1,0 +1,53 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+
+# Production
+build/
+dist/
+
+# Misc
+.DS_Store
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+Thumbs.db
+
+# Uploads (не игнорируем структуру, только содержимое)
+kitchen-store-backend/uploads/*
+!kitchen-store-backend/uploads/.gitkeep
+!kitchen-store-backend/uploads/categories/
+!kitchen-store-backend/uploads/avatars/
+!kitchen-store-backend/uploads/banners/
+
+# Next.js
+.next/
+out/
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+
