@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  ParseIntPipe,
   Query,
 } from '@nestjs/common';
 import { CartService } from './cart.service';
@@ -27,7 +28,7 @@ export class CartController {
 
   @Put(':id/quantity')
   async updateQuantity(
-    @Param('id') id: number,
+    @Param('id', ParseIntPipe) id: number,
     @Body('quantity') quantity: number,
     @Query('userId') userId: string = 'guest',
   ) {
@@ -36,7 +37,7 @@ export class CartController {
 
   @Delete(':id')
   async removeFromCart(
-    @Param('id') id: number,
+    @Param('id', ParseIntPipe) id: number,
     @Query('userId') userId: string = 'guest',
   ) {
     await this.cartService.removeItem(id, userId);
@@ -49,4 +50,3 @@ export class CartController {
     return { success: true };
   }
 }
-

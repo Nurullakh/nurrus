@@ -10,4 +10,3 @@ import { NewsletterSubscription } from './newsletter.entity';
   providers: [NewsletterService],
 })
 export class NewsletterModule {}
-

@@ -30,4 +30,3 @@ export class RegisterDto {
   @MaxLength(500, { message: 'Адрес не должен превышать 500 символов' })
   address?: string;
 }
-

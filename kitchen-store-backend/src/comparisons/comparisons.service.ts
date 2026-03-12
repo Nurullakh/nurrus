@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Comparison } from './comparisons.entity';
@@ -62,7 +66,9 @@ export class ComparisonsService {
   async removeProduct(userId: string, productId: number): Promise<Comparison> {
     const comparison = await this.getComparison(userId);
 
-    comparison.productIds = comparison.productIds.filter((id) => id !== productId);
+    comparison.productIds = comparison.productIds.filter(
+      (id) => id !== productId,
+    );
     return await this.comparisonsRepository.save(comparison);
   }
 

@@ -27,7 +27,8 @@ export class ReviewsController {
       storage: diskStorage({
         destination: './uploads/reviews',
         filename: (req, file, callback) => {
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
           callback(null, `review-${uniqueSuffix}${extname(file.originalname)}`);
         },
       }),
@@ -39,7 +40,9 @@ export class ReviewsController {
   ) {
     const reviewData: CreateReviewDto = {
       productId: parseInt(createReviewDto.productId, 10),
-      userId: createReviewDto.userId ? parseInt(createReviewDto.userId, 10) : undefined,
+      userId: createReviewDto.userId
+        ? parseInt(createReviewDto.userId, 10)
+        : undefined,
       userName: createReviewDto.userName,
       userEmail: createReviewDto.userEmail,
       rating: parseInt(createReviewDto.rating, 10),
@@ -48,7 +51,9 @@ export class ReviewsController {
     };
 
     if (files && files.length > 0) {
-      reviewData.images = files.map((file) => `/uploads/reviews/${file.filename}`);
+      reviewData.images = files.map(
+        (file) => `/uploads/reviews/${file.filename}`,
+      );
     }
 
     return this.reviewsService.create(reviewData);

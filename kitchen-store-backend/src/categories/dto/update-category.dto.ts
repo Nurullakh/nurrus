@@ -10,12 +10,12 @@ export class UpdateCategoryDto {
   @IsOptional()
   slug?: string;
 
-  @Transform(({ value }) => value ? parseInt(value, 10) : undefined)
+  @Transform(({ value }) => (value ? parseInt(value, 10) : undefined))
   @IsNumber()
   @IsOptional()
   parentId?: number;
 
-  @Transform(({ value }) => value ? parseInt(value, 10) : undefined)
+  @Transform(({ value }) => (value ? parseInt(value, 10) : undefined))
   @IsNumber()
   @IsOptional()
   order?: number;
@@ -37,9 +37,8 @@ export class UpdateCategoryDto {
   @IsOptional()
   isActive?: boolean;
 
-  @Transform(({ value }) => value ? parseInt(value, 10) : undefined)
+  @Transform(({ value }) => (value ? parseInt(value, 10) : undefined))
   @IsNumber()
   @IsOptional()
   productCount?: number;
 }
-

@@ -8,12 +8,12 @@ export class CreateCategoryDto {
   @IsString()
   slug: string;
 
-  @Transform(({ value }) => value ? parseInt(value, 10) : undefined)
+  @Transform(({ value }) => (value ? parseInt(value, 10) : undefined))
   @IsNumber()
   @IsOptional()
   parentId?: number;
 
-  @Transform(({ value }) => value ? parseInt(value, 10) : 1)
+  @Transform(({ value }) => (value ? parseInt(value, 10) : 1))
   @IsNumber()
   @IsOptional()
   order?: number;
@@ -35,4 +35,3 @@ export class CreateCategoryDto {
   @IsOptional()
   isActive?: boolean;
 }
-

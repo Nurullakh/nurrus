@@ -104,15 +104,15 @@ function getRandomRating(): number {
 
 function getRandomSpecifications() {
   return {
-    'Материал': getRandomElement(materials),
-    'Цвет': getRandomElement(colors),
+    Материал: getRandomElement(materials),
+    Цвет: getRandomElement(colors),
     'Ширина (см)': getRandomNumber(200, 400),
     'Глубина (см)': getRandomNumber(50, 70),
     'Высота (см)': getRandomNumber(80, 95),
     'Количество фасадов': getRandomNumber(5, 15),
-    'Фурнитура': 'Blum',
-    'Столешница': getRandomElement(['МДФ', 'Кварц', 'Гранит', 'Дерево']),
-    'Стиль': getRandomElement(['Классика', 'Модерн', 'Скандинавский', 'Лофт']),
+    Фурнитура: 'Blum',
+    Столешница: getRandomElement(['МДФ', 'Кварц', 'Гранит', 'Дерево']),
+    Стиль: getRandomElement(['Классика', 'Модерн', 'Скандинавский', 'Лофт']),
   };
 }
 
@@ -122,7 +122,7 @@ async function seedProducts(dataSource: DataSource) {
 
   // Получаем все категории
   const categories = await categoryRepository.find();
-  
+
   if (categories.length === 0) {
     console.log('⚠️  Нет категорий в базе данных. Создайте категории сначала.');
     return;
@@ -167,7 +167,9 @@ async function seedProducts(dataSource: DataSource) {
     }
 
     await productRepository.save(batch);
-    console.log(`✅ Создано товаров: ${Math.min(i + batchSize, productsToCreate)}/${productsToCreate}`);
+    console.log(
+      `✅ Создано товаров: ${Math.min(i + batchSize, productsToCreate)}/${productsToCreate}`,
+    );
   }
 
   console.log(`\n🎉 Успешно создано ${productsToCreate} товаров!`);
@@ -188,9 +190,9 @@ async function run() {
   try {
     await dataSource.initialize();
     console.log('✅ Подключение к базе данных установлено\n');
-    
+
     await seedProducts(dataSource);
-    
+
     await dataSource.destroy();
     console.log('\n✅ Скрипт завершен успешно');
     process.exit(0);
@@ -202,4 +204,3 @@ async function run() {
 }
 
 run();
-

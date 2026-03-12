@@ -1,34 +1,45 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './users.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-// import * as bcrypt from 'bcrypt'; // TODO: Раскомментировать после установки bcrypt
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
+  private static readonly BCRYPT_ROUNDS = 10;
+
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
+    const normalizedEmail = createUserDto.email.trim().toLowerCase();
+
     // Проверяем существует ли пользователь с таким email
     const existingUser = await this.usersRepository.findOne({
-      where: { email: createUserDto.email },
+      where: { email: normalizedEmail },
     });
 
     if (existingUser) {
       throw new ConflictException('Пользователь с таким email уже существует');
     }
 
-    // Хешируем пароль (в production используйте bcrypt)
-    // const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
-    
+    const hashedPassword = await bcrypt.hash(
+      createUserDto.password,
+      UsersService.BCRYPT_ROUNDS,
+    );
+
     const user = this.usersRepository.create({
       ...createUserDto,
-      // password: hashedPassword,
+      email: normalizedEmail,
+      password: hashedPassword,
     });
 
     return await this.usersRepository.save(user);
@@ -36,7 +47,15 @@ export class UsersService {
 
   async findAll(): Promise<User[]> {
     return await this.usersRepository.find({
-      select: ['id', 'name', 'email', 'phone', 'role', 'status', 'registeredAt'],
+      select: [
+        'id',
+        'name',
+        'email',
+        'phone',
+        'role',
+        'status',
+        'registeredAt',
+      ],
       order: { registeredAt: 'DESC' },
     });
   }
@@ -44,7 +63,17 @@ export class UsersService {
   async findOne(id: number): Promise<User> {
     const user = await this.usersRepository.findOne({
       where: { id },
-      select: ['id', 'name', 'email', 'phone', 'role', 'status', 'address', 'avatar', 'registeredAt'],
+      select: [
+        'id',
+        'name',
+        'email',
+        'phone',
+        'role',
+        'status',
+        'address',
+        'avatar',
+        'registeredAt',
+      ],
     });
 
     if (!user) {
@@ -59,11 +88,22 @@ export class UsersService {
   }
 
   async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
-    const user = await this.findOne(id);
+    await this.findOne(id);
 
-    // Если обновляется пароль, нужно его хешировать
+    if (updateUserDto.email) {
+      updateUserDto.email = updateUserDto.email.trim().toLowerCase();
+    }
+
     if (updateUserDto.password) {
-      // updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
+      const isBcryptHash = /^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/.test(
+        updateUserDto.password,
+      );
+      if (!isBcryptHash) {
+        updateUserDto.password = await bcrypt.hash(
+          updateUserDto.password,
+          UsersService.BCRYPT_ROUNDS,
+        );
+      }
     }
 
     await this.usersRepository.update(id, updateUserDto);
@@ -71,7 +111,7 @@ export class UsersService {
   }
 
   async remove(id: number): Promise<void> {
-    const user = await this.findOne(id);
+    await this.findOne(id);
     await this.usersRepository.delete(id);
   }
 
@@ -102,4 +142,3 @@ export class UsersService {
     };
   }
 }
-

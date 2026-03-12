@@ -1,4 +1,11 @@
-import { IsString, IsNumber, IsOptional, IsBoolean, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsBoolean,
+  Min,
+  Max,
+} from 'class-validator';
 
 export class UpdateReviewDto {
   @IsNumber()
@@ -23,4 +30,3 @@ export class UpdateReviewDto {
   @IsOptional()
   adminComment?: string;
 }
-

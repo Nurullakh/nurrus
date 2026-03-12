@@ -10,4 +10,3 @@ export class SubscribeNewsletterDto {
   @MaxLength(255)
   source?: string;
 }
-

@@ -45,4 +45,3 @@ export class CreateBannerDto {
   @IsBoolean()
   isActive?: boolean;
 }
-

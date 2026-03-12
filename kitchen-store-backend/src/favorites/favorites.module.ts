@@ -11,4 +11,3 @@ import { FavoriteItem } from './favorites.entity';
   exports: [FavoritesService],
 })
 export class FavoritesModule {}
-

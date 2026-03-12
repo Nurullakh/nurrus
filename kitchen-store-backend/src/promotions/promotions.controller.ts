@@ -6,7 +6,7 @@ import {
   Delete,
   Body,
   Param,
-  Query,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { PromotionsService } from './promotions.service';
 import { CreatePromotionDto } from './dto/create-promotion.dto';
@@ -37,26 +37,25 @@ export class PromotionsController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.promotionsService.findOne(+id);
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.promotionsService.findOne(id);
   }
 
   @Put(':id')
   update(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updatePromotionDto: UpdatePromotionDto,
   ) {
-    return this.promotionsService.update(+id, updatePromotionDto);
+    return this.promotionsService.update(id, updatePromotionDto);
   }
 
   @Put(':id/toggle')
-  toggleStatus(@Param('id') id: string) {
-    return this.promotionsService.toggleStatus(+id);
+  toggleStatus(@Param('id', ParseIntPipe) id: number) {
+    return this.promotionsService.toggleStatus(id);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.promotionsService.remove(+id);
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.promotionsService.remove(id);
   }
 }
-

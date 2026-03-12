@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
 import { Promotion } from './promotions.entity';
@@ -57,7 +57,7 @@ export class PromotionsService {
     await this.promotionsRepository.update(id, updatePromotionDto);
     const promotion = await this.findOne(id);
     if (!promotion) {
-      throw new Error(`Акция с ID ${id} не найдена`);
+      throw new NotFoundException(`Акция с ID ${id} не найдена`);
     }
     return promotion;
   }
@@ -69,10 +69,9 @@ export class PromotionsService {
   async toggleStatus(id: number): Promise<Promotion> {
     const promotion = await this.findOne(id);
     if (!promotion) {
-      throw new Error(`Акция с ID ${id} не найдена`);
+      throw new NotFoundException(`Акция с ID ${id} не найдена`);
     }
     promotion.status = promotion.status === 'active' ? 'paused' : 'active';
     return await this.promotionsRepository.save(promotion);
   }
 }
-

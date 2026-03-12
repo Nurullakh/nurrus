@@ -1,4 +1,10 @@
-import { IsNumber, IsString, IsBoolean, IsOptional, IsArray } from 'class-validator';
+import {
+  IsNumber,
+  IsString,
+  IsBoolean,
+  IsOptional,
+  IsArray,
+} from 'class-validator';
 
 export class AddToCartDto {
   @IsNumber()
@@ -34,4 +40,3 @@ export class AddToCartDto {
   @IsString()
   userId?: string;
 }
-

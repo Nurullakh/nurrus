@@ -21,4 +21,3 @@ export class Comparison {
   @CreateDateColumn()
   createdAt: Date;
 }
-

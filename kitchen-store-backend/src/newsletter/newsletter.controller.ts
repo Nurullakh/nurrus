@@ -11,4 +11,3 @@ export class NewsletterController {
     return this.newsletterService.subscribe(subscribeDto);
   }
 }
-

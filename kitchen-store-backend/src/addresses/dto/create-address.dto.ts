@@ -52,4 +52,3 @@ export class CreateAddressDto {
   @IsOptional()
   isDefault?: boolean;
 }
-

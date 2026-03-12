@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  ParseIntPipe,
   Query,
 } from '@nestjs/common';
 import { AddressesService } from './addresses.service';
@@ -22,31 +23,44 @@ export class AddressesController {
   }
 
   @Get()
-  findAll(@Query('userId') userId: string) {
-    return this.addressesService.findAll(parseInt(userId, 10));
+  findAll(@Query('userId', ParseIntPipe) userId: number) {
+    return this.addressesService.findAll(userId);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.addressesService.findOne(+id);
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.addressesService.findOne(id);
   }
 
   @Put(':id')
   update(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateAddressDto: UpdateAddressDto,
     @Query('userId') userId?: string,
   ) {
-    return this.addressesService.update(+id, updateAddressDto, userId ? parseInt(userId, 10) : undefined);
+    return this.addressesService.update(
+      id,
+      updateAddressDto,
+      userId ? parseInt(userId, 10) : undefined,
+    );
   }
 
   @Post(':id/set-default')
-  setDefault(@Param('id') id: string, @Query('userId') userId: string) {
-    return this.addressesService.setDefault(+id, parseInt(userId, 10));
+  setDefault(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('userId', ParseIntPipe) userId: number,
+  ) {
+    return this.addressesService.setDefault(id, userId);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string, @Query('userId') userId?: string) {
-    return this.addressesService.remove(+id, userId ? parseInt(userId, 10) : undefined);
+  remove(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('userId') userId?: string,
+  ) {
+    return this.addressesService.remove(
+      id,
+      userId ? parseInt(userId, 10) : undefined,
+    );
   }
 }

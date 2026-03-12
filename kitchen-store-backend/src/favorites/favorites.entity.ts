@@ -1,4 +1,9 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+} from 'typeorm';
 
 @Entity('favorite_items')
 export class FavoriteItem {
@@ -32,4 +37,3 @@ export class FavoriteItem {
   @CreateDateColumn()
   createdAt: Date;
 }
-

@@ -57,4 +57,3 @@ export class UpdateAddressDto {
   @IsOptional()
   isDefault?: boolean;
 }
-

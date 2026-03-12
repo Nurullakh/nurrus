@@ -1,4 +1,8 @@
-import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
@@ -47,7 +51,11 @@ export class AuthService {
     const savedUser = await this.usersRepository.save(user);
 
     // Генерируем JWT токен
-    const payload = { sub: savedUser.id, email: savedUser.email, role: savedUser.role };
+    const payload = {
+      sub: savedUser.id,
+      email: savedUser.email,
+      role: savedUser.role,
+    };
     const access_token = this.jwtService.sign(payload);
 
     const result = {
@@ -85,7 +93,9 @@ export class AuthService {
     }
 
     // Для легаси-аккаунтов поддерживаем оба формата: bcrypt-хеш и открытый текст.
-    const isBcryptHash = /^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/.test(user.password);
+    const isBcryptHash = /^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/.test(
+      user.password,
+    );
     const isPasswordValid = isBcryptHash
       ? await bcrypt.compare(loginDto.password, user.password)
       : user.password === loginDto.password;
@@ -121,7 +131,17 @@ export class AuthService {
   async validateUser(userId: number) {
     const user = await this.usersRepository.findOne({
       where: { id: userId },
-      select: ['id', 'name', 'email', 'phone', 'role', 'status', 'avatar', 'address', 'registeredAt'],
+      select: [
+        'id',
+        'name',
+        'email',
+        'phone',
+        'role',
+        'status',
+        'avatar',
+        'address',
+        'registeredAt',
+      ],
     });
 
     if (!user || user.status === 'blocked') {
@@ -135,7 +155,9 @@ export class AuthService {
     const user = await this.validateUser(userId);
 
     if (!user) {
-      throw new UnauthorizedException('Пользователь не найден или заблокирован');
+      throw new UnauthorizedException(
+        'Пользователь не найден или заблокирован',
+      );
     }
 
     return user;

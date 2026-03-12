@@ -73,4 +73,3 @@ export class CreateOrderDto {
   @IsString()
   paymentMethod: string;
 }
-

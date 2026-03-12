@@ -11,4 +11,3 @@ import { Order } from './orders.entity';
   exports: [OrdersService],
 })
 export class OrdersModule {}
-

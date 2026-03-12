@@ -67,7 +67,7 @@ export class ViewHistoryService {
     // Сохраняем порядок из истории
     return productIds
       .map((id) => products.find((p) => p.id === id))
-      .filter((p) => p !== undefined) as Product[];
+      .filter((p) => p !== undefined);
   }
 
   async clearHistory(userId: string): Promise<void> {

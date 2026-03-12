@@ -22,4 +22,3 @@ export class ViewHistory {
   @CreateDateColumn()
   viewedAt: Date;
 }
-

@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Order } from './orders.entity';
@@ -65,7 +69,7 @@ export class OrdersService {
         order: { createdAt: 'DESC' },
       });
     }
-    
+
     return await this.ordersRepository.find({
       order: { createdAt: 'DESC' },
     });
@@ -87,7 +91,7 @@ export class OrdersService {
   ): Promise<Order> {
     const order = await this.findOne(id);
     if (!order) {
-      throw new Error(`Заказ с ID ${id} не найден`);
+      throw new NotFoundException(`Заказ с ID ${id} не найден`);
     }
 
     const trackingHistory = order.trackingHistory || [];
@@ -105,25 +109,31 @@ export class OrdersService {
 
     const updatedOrder = await this.findOne(id);
     if (!updatedOrder) {
-      throw new Error(`Заказ с ID ${id} не найден`);
+      throw new NotFoundException(`Заказ с ID ${id} не найден`);
     }
     return updatedOrder;
   }
 
-  async updateTrackingNumber(id: number, trackingNumber: string): Promise<Order> {
+  async updateTrackingNumber(
+    id: number,
+    trackingNumber: string,
+  ): Promise<Order> {
     await this.ordersRepository.update(id, { trackingNumber });
     const order = await this.findOne(id);
     if (!order) {
-      throw new Error(`Заказ с ID ${id} не найден`);
+      throw new NotFoundException(`Заказ с ID ${id} не найден`);
     }
     return order;
   }
 
-  async updateStatus(id: number, updateStatusDto: UpdateOrderStatusDto): Promise<Order> {
+  async updateStatus(
+    id: number,
+    updateStatusDto: UpdateOrderStatusDto,
+  ): Promise<Order> {
     await this.ordersRepository.update(id, updateStatusDto);
     const order = await this.findOne(id);
     if (!order) {
-      throw new Error(`Заказ с ID ${id} не найден`);
+      throw new NotFoundException(`Заказ с ID ${id} не найден`);
     }
     return order;
   }
@@ -152,14 +162,13 @@ export class OrdersService {
       .createQueryBuilder('order')
       .select('SUM(order.total)', 'totalRevenue')
       .where('order.paymentStatus = :status', { status: 'paid' })
-      .getRawOne();
+      .getRawOne<{ totalRevenue: string | null }>();
 
     return {
       totalOrders,
       pendingOrders,
       completedOrders,
-      totalRevenue: parseFloat(result.totalRevenue) || 0,
+      totalRevenue: parseFloat(result?.totalRevenue ?? '0') || 0,
     };
   }
 }
-

@@ -1,5 +1,12 @@
 import { Transform } from 'class-transformer';
-import { IsBoolean, IsIn, IsInt, IsOptional, IsString, Min } from 'class-validator';
+import {
+  IsBoolean,
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
 
 export class UpdateBannerDto {
   @IsOptional()
@@ -37,4 +44,3 @@ export class UpdateBannerDto {
   @IsBoolean()
   isActive?: boolean;
 }
-

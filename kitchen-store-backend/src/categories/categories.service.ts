@@ -1,6 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Category } from './categories.entity';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
@@ -37,15 +41,20 @@ export class CategoriesService {
   }
 
   async findBySlug(slug: string): Promise<Category> {
-    const category = await this.categoriesRepository.findOne({ where: { slug } });
+    const category = await this.categoriesRepository.findOne({
+      where: { slug },
+    });
     if (!category) {
       throw new NotFoundException(`Категория со slug ${slug} не найдена`);
     }
     return category;
   }
 
-  async update(id: number, updateCategoryDto: UpdateCategoryDto): Promise<Category> {
-    const category = await this.findOne(id);
+  async update(
+    id: number,
+    updateCategoryDto: UpdateCategoryDto,
+  ): Promise<Category> {
+    await this.findOne(id);
     await this.categoriesRepository.update(id, updateCategoryDto);
     return await this.findOne(id);
   }
@@ -57,25 +66,24 @@ export class CategoriesService {
     });
 
     if (childCategories.length > 0) {
-      throw new Error('Нельзя удалить категорию с подкатегориями');
+      throw new BadRequestException(
+        'Нельзя удалить категорию с подкатегориями',
+      );
     }
 
-    const category = await this.findOne(id);
+    await this.findOne(id);
     await this.categoriesRepository.delete(id);
   }
 
-  async updateProductCount(categoryId: number): Promise<void> {
-    // TODO: Обновить количество товаров в категории
-    // Это можно вызывать при добавлении/удалении товара
-  }
-
-  private buildTree(categories: Category[], parentId: number | null = null): any[] {
+  private buildTree(
+    categories: Category[],
+    parentId: number | null = null,
+  ): any[] {
     return categories
-      .filter(cat => cat.parentId === parentId)
-      .map(cat => ({
+      .filter((cat) => cat.parentId === parentId)
+      .map((cat) => ({
         ...cat,
         children: this.buildTree(categories, cat.id),
       }));
   }
 }
-

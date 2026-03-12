@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Banner } from './banners.entity';
@@ -27,10 +27,10 @@ export class BannersService {
     }
 
     if (device) {
-      query.andWhere(
-        '(banner.device = :device OR banner.device = :all)',
-        { device, all: 'all' },
-      );
+      query.andWhere('(banner.device = :device OR banner.device = :all)', {
+        device,
+        all: 'all',
+      });
     }
 
     return await query.orderBy('banner.order', 'ASC').getMany();
@@ -50,7 +50,7 @@ export class BannersService {
     await this.bannersRepository.update(id, updateBannerDto);
     const banner = await this.findOne(id);
     if (!banner) {
-      throw new Error(`Banner с ID ${id} не найден`);
+      throw new NotFoundException(`Banner с ID ${id} не найден`);
     }
     return banner;
   }
@@ -62,10 +62,9 @@ export class BannersService {
   async toggleStatus(id: number): Promise<Banner> {
     const banner = await this.findOne(id);
     if (!banner) {
-      throw new Error(`Banner с ID ${id} не найден`);
+      throw new NotFoundException(`Banner с ID ${id} не найден`);
     }
     banner.isActive = !banner.isActive;
     return await this.bannersRepository.save(banner);
   }
 }
-

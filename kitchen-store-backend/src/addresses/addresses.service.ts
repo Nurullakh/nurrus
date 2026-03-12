@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindOptionsWhere, Not, Repository } from 'typeorm';
 import { Address } from './addresses.entity';
 import { CreateAddressDto } from './dto/create-address.dto';
 import { UpdateAddressDto } from './dto/update-address.dto';
@@ -33,8 +33,8 @@ export class AddressesService {
   }
 
   async findOne(id: number, userId?: number): Promise<Address> {
-    const where: any = { id };
-    if (userId) {
+    const where: FindOptionsWhere<Address> = { id };
+    if (userId !== undefined) {
       where.userId = userId;
     }
 
@@ -47,13 +47,17 @@ export class AddressesService {
     return address;
   }
 
-  async update(id: number, updateAddressDto: UpdateAddressDto, userId?: number): Promise<Address> {
+  async update(
+    id: number,
+    updateAddressDto: UpdateAddressDto,
+    userId?: number,
+  ): Promise<Address> {
     const address = await this.findOne(id, userId);
 
     // Если устанавливаем адрес по умолчанию, снимаем флаг с других
     if (updateAddressDto.isDefault) {
       await this.addressesRepository.update(
-        { userId: address.userId, isDefault: true, id: { $ne: id } as any },
+        { userId: address.userId, isDefault: true, id: Not(id) },
         { isDefault: false },
       );
     }

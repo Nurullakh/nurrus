@@ -1,4 +1,12 @@
-import { IsString, IsNumber, IsOptional, IsArray, Min, Max, IsEmail } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsArray,
+  Min,
+  Max,
+  IsEmail,
+} from 'class-validator';
 
 export class CreateReviewDto {
   @IsNumber()
@@ -31,4 +39,3 @@ export class CreateReviewDto {
   @IsOptional()
   orderNumber?: string; // Для проверки покупки
 }
-

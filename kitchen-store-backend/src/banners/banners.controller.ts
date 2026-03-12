@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  ParseIntPipe,
   Query,
   UseInterceptors,
   UploadedFile,
@@ -71,8 +72,8 @@ export class BannersController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.bannersService.findOne(+id);
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.bannersService.findOne(id);
   }
 
   @Put(':id')
@@ -82,24 +83,23 @@ export class BannersController {
     }),
   )
   update(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateBannerDto: UpdateBannerDto,
     @UploadedFile() file: Express.Multer.File,
   ) {
     if (file) {
       updateBannerDto.imageUrl = `/uploads/banners/${file.filename}`;
     }
-    return this.bannersService.update(+id, updateBannerDto);
+    return this.bannersService.update(id, updateBannerDto);
   }
 
   @Put(':id/toggle')
-  toggleStatus(@Param('id') id: string) {
-    return this.bannersService.toggleStatus(+id);
+  toggleStatus(@Param('id', ParseIntPipe) id: number) {
+    return this.bannersService.toggleStatus(id);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.bannersService.remove(+id);
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.bannersService.remove(id);
   }
 }
-

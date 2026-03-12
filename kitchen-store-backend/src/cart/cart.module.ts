@@ -11,4 +11,3 @@ import { CartItem } from './cart.entity';
   exports: [CartService],
 })
 export class CartModule {}
-

@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Delete,
-  Param,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Query } from '@nestjs/common';
 import { ViewHistoryService } from './view-history.service';
 
 @Controller('view-history')
@@ -25,7 +18,10 @@ export class ViewHistoryController {
     @Query('userId') userId: string,
     @Query('limit') limit: string = '10',
   ) {
-    return this.viewHistoryService.getHistory(userId || 'guest', parseInt(limit, 10));
+    return this.viewHistoryService.getHistory(
+      userId || 'guest',
+      parseInt(limit, 10),
+    );
   }
 
   @Delete()

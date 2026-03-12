@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Review } from './reviews.entity';
@@ -22,7 +26,9 @@ export class ReviewsService {
     });
 
     if (!product) {
-      throw new NotFoundException(`Товар с ID ${createReviewDto.productId} не найден`);
+      throw new NotFoundException(
+        `Товар с ID ${createReviewDto.productId} не найден`,
+      );
     }
 
     // Проверяем, не оставлял ли пользователь уже отзыв на этот товар

@@ -11,4 +11,3 @@ import { Promotion } from './promotions.entity';
   exports: [PromotionsService],
 })
 export class PromotionsModule {}
-

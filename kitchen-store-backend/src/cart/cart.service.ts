@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CartItem } from './cart.entity';
@@ -51,7 +51,7 @@ export class CartService {
   ): Promise<CartItem> {
     const item = await this.cartRepository.findOne({ where: { id, userId } });
     if (!item) {
-      throw new Error('Товар не найден в корзине');
+      throw new NotFoundException('Товар не найден в корзине');
     }
 
     item.quantity = quantity;
@@ -59,17 +59,21 @@ export class CartService {
   }
 
   async removeItem(id: number, userId: string = 'guest'): Promise<void> {
-    const existingItem = await this.cartRepository.findOne({ where: { id, userId } });
+    const existingItem = await this.cartRepository.findOne({
+      where: { id, userId },
+    });
     if (!existingItem) {
       return;
     }
 
     // Чистим все дубли этого товара в корзине пользователя (если вдруг появились из-за гонок).
-    await this.cartRepository.delete({ productId: existingItem.productId, userId });
+    await this.cartRepository.delete({
+      productId: existingItem.productId,
+      userId,
+    });
   }
 
   async clearCart(userId: string = 'guest'): Promise<void> {
     await this.cartRepository.delete({ userId });
   }
 }
-

@@ -7,7 +7,7 @@ import { join } from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  
+
   // Включаем глобальную валидацию
   app.useGlobalPipes(
     new ValidationPipe({
@@ -29,8 +29,19 @@ async function bootstrap() {
       },
     }),
   );
-  
-  app.enableCors();
+
+  const allowedOrigins = (
+    process.env.CORS_ORIGIN ?? 'http://localhost:5173,http://localhost:3000'
+  )
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  app.enableCors({
+    origin: allowedOrigins,
+    credentials: true,
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+  });
 
   // Настройка статических файлов для изображений
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {
@@ -48,4 +59,4 @@ async function bootstrap() {
 
   await app.listen(process.env.PORT || 3001);
 }
-bootstrap();
+void bootstrap();

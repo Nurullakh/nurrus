@@ -28,7 +28,7 @@ export class ProductsService {
 
   // Helper для массива продуктов
   private parseSpecificationsArray(products: Product[]): Product[] {
-    return products.map(product => this.parseSpecifications(product));
+    return products.map((product) => this.parseSpecifications(product));
   }
 
   async findAllPaginated(page: number = 1, limit: number = 10) {
@@ -99,11 +99,7 @@ export class ProductsService {
     return result.map((r) => r.category).filter(Boolean);
   }
 
-  async findByCategory(
-    category: string,
-    page: number = 1,
-    limit: number = 40,
-  ) {
+  async findByCategory(category: string, page: number = 1, limit: number = 40) {
     const [products, total] = await this.productsRepository.findAndCount({
       where: { category },
       take: limit,
@@ -147,24 +143,26 @@ export class ProductsService {
 
   async updateProduct(id: number, dto: UpdateProductDto): Promise<Product> {
     const product = await this.findOne(id);
-    
+
     if (!product) {
       throw new NotFoundException(`Товар с ID ${id} не найден`);
     }
 
     await this.productsRepository.update(id, dto);
     const updatedProduct = await this.findOne(id);
-    
+
     if (!updatedProduct) {
-      throw new NotFoundException(`Товар с ID ${id} не найден после обновления`);
+      throw new NotFoundException(
+        `Товар с ID ${id} не найден после обновления`,
+      );
     }
-    
+
     return updatedProduct;
   }
 
   async deleteProduct(id: number): Promise<void> {
     const product = await this.findOne(id);
-    
+
     if (!product) {
       throw new NotFoundException(`Товар с ID ${id} не найден`);
     }

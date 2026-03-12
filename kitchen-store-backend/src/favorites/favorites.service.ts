@@ -71,4 +71,3 @@ export class FavoritesService {
     await this.favoritesRepository.delete({ userId });
   }
 }
-
