@@ -23,11 +23,9 @@ import {
   ReloadOutlined,
 } from '@ant-design/icons';
 import type { UploadFile } from 'antd/es/upload/interface';
-import axios from 'axios';
+import { API_URL, api } from '../lib/api';
 
 const { Option } = Select;
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 interface Banner {
   id: number;
@@ -58,7 +56,7 @@ const BannersPage: React.FC = () => {
   const fetchBanners = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${API_URL}/banners/admin`);
+      const response = await api.get('/banners/admin');
       setBanners(response.data);
     } catch (error) {
       message.error('Ошибка загрузки баннеров');
@@ -84,7 +82,7 @@ const BannersPage: React.FC = () => {
 
   const handleDelete = async (id: number) => {
     try {
-      await axios.delete(`${API_URL}/banners/${id}`);
+      await api.delete(`/banners/${id}`);
       message.success('Баннер удален');
       fetchBanners();
     } catch (error: any) {
@@ -99,7 +97,7 @@ const BannersPage: React.FC = () => {
 
   const handleToggleStatus = async (id: number) => {
     try {
-      await axios.put(`${API_URL}/banners/${id}/toggle`);
+      await api.put(`/banners/${id}/toggle`);
       message.success('Статус баннера изменен');
       fetchBanners();
     } catch (error) {
@@ -130,12 +128,12 @@ const BannersPage: React.FC = () => {
       }
 
       if (editingBanner) {
-        await axios.put(`${API_URL}/banners/${editingBanner.id}`, formData, {
+        await api.put(`/banners/${editingBanner.id}`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         message.success('Баннер обновлен');
       } else {
-        await axios.post(`${API_URL}/banners`, formData, {
+        await api.post('/banners', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         message.success('Баннер создан');

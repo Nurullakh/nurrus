@@ -23,7 +23,8 @@ import {
   DownloadOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
-import axios from 'axios';
+import type { UploadFile } from 'antd/es/upload/interface';
+import { API_URL, api } from '../lib/api';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -39,20 +40,34 @@ interface Product {
   is_available: boolean;
   rating?: number;
   reviews_count?: number;
-  specifications?: any;
+  specifications?: Record<string, unknown>;
+}
+
+interface Category {
+  id: number;
+  name: string;
+}
+
+interface ProductFormValues {
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  brand: string;
+  specifications?: string;
+  images?: UploadFile[];
+  is_available?: boolean;
 }
 
 const ProductsPage: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [searchText, setSearchText] = useState('');
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
   const [form] = Form.useForm();
-
-  const API_URL = 'http://localhost:3001';
 
   useEffect(() => {
     fetchProducts();
@@ -62,7 +77,7 @@ const ProductsPage: React.FC = () => {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${API_URL}/products`, {
+      const response = await api.get('/products', {
         params: {
           page: pagination.current,
           limit: pagination.pageSize,
@@ -70,7 +85,7 @@ const ProductsPage: React.FC = () => {
         },
       });
       setProducts(response.data.data);
-      setPagination({ ...pagination, total: response.data.total });
+      setPagination((prev) => ({ ...prev, total: response.data.total }));
     } catch (error) {
       message.error('Ошибка загрузки товаров');
     } finally {
@@ -80,10 +95,9 @@ const ProductsPage: React.FC = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get(`${API_URL}/categories`);
+      const response = await api.get('/categories');
       setCategories(response.data);
-    } catch (error) {
-      console.error('Ошибка загрузки категорий:', error);
+    } catch {
     }
   };
 
@@ -104,7 +118,7 @@ const ProductsPage: React.FC = () => {
 
   const handleDelete = async (id: number) => {
     try {
-      await axios.delete(`${API_URL}/products/${id}`);
+      await api.delete(`/products/${id}`);
       message.success('Товар удален');
       fetchProducts();
     } catch (error) {
@@ -112,8 +126,12 @@ const ProductsPage: React.FC = () => {
     }
   };
 
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values: ProductFormValues) => {
     try {
+      if (values.specifications) {
+        JSON.parse(values.specifications);
+      }
+
       const formData = new FormData();
       formData.append('name', values.name);
       formData.append('description', values.description);
@@ -122,8 +140,8 @@ const ProductsPage: React.FC = () => {
       formData.append('brand', values.brand);
       formData.append('specifications', values.specifications || '{}');
 
-      if (values.images?.fileList) {
-        values.images.fileList.forEach((file: any) => {
+      if (values.images) {
+        values.images.forEach((file) => {
           if (file.originFileObj) {
             formData.append('images', file.originFileObj);
           }
@@ -131,17 +149,21 @@ const ProductsPage: React.FC = () => {
       }
 
       if (editingProduct) {
-        await axios.put(`${API_URL}/products/${editingProduct.id}`, formData);
+        await api.put(`/products/${editingProduct.id}`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
         message.success('Товар обновлен');
       } else {
-        await axios.post(`${API_URL}/products`, formData);
+        await api.post('/products', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
         message.success('Товар создан');
       }
 
       setIsModalOpen(false);
       fetchProducts();
     } catch (error) {
-      message.error('Ошибка сохранения товара');
+      message.error('Ошибка сохранения товара. Проверь JSON характеристик');
     }
   };
 
@@ -274,7 +296,11 @@ const ProductsPage: React.FC = () => {
         pagination={{
           ...pagination,
           onChange: (page, pageSize) => {
-            setPagination({ ...pagination, current: page, pageSize: pageSize || 10 });
+            setPagination((prev) => ({
+              ...prev,
+              current: page,
+              pageSize: pageSize || 10,
+            }));
           },
         }}
         scroll={{ x: 1200 }}
@@ -354,7 +380,8 @@ const ProductsPage: React.FC = () => {
           <Form.Item
             name="images"
             label="Изображения"
-            valuePropName="file"
+            valuePropName="fileList"
+            getValueFromEvent={(event) => event?.fileList}
           >
             <Upload
               listType="picture-card"

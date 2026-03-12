@@ -10,13 +10,21 @@ import OrdersPage from './pages/Orders';
 import PromotionsPage from './pages/Promotions';
 import BannersPage from './pages/Banners';
 import UsersPage from './pages/Users';
+import RequireAuth from './components/RequireAuth';
 
 const App: React.FC = () => {
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
       <Route path="/admin/login" element={<LoginPage />} />
-      <Route path="/admin" element={<AdminLayout />}>
+      <Route
+        path="/admin"
+        element={
+          <RequireAuth>
+            <AdminLayout />
+          </RequireAuth>
+        }
+      >
         <Route index element={<Navigate to="/admin/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />

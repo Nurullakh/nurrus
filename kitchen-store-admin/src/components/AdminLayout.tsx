@@ -14,6 +14,7 @@ import {
 } from '@ant-design/icons';
 import { Layout, Menu, Button, theme, Avatar, Dropdown } from 'antd';
 import type { MenuProps } from 'antd';
+import { ADMIN_TOKEN_KEY, ADMIN_USER_KEY } from '../lib/api';
 
 const { Header, Sider, Content } = Layout;
 
@@ -70,11 +71,9 @@ const AdminLayout: React.FC = () => {
 
   const handleUserMenuClick = ({ key }: { key: string }) => {
     if (key === 'logout') {
-      localStorage.removeItem('admin_token');
-      localStorage.removeItem('admin_user');
+      localStorage.removeItem(ADMIN_TOKEN_KEY);
+      localStorage.removeItem(ADMIN_USER_KEY);
       navigate('/admin/login');
-    } else if (key === 'settings') {
-      navigate('/admin/settings');
     }
   };
 

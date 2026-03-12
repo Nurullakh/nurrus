@@ -6,10 +6,8 @@ import {
   DollarOutlined,
 } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import { api } from '../lib/api';
 import StatCard from '../components/StatCard';
-
-const API_URL = 'http://localhost:3001';
 
 interface Statistics {
   totalOrders: number;
@@ -30,13 +28,12 @@ const DashboardPage: React.FC = () => {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      const statsResponse = await axios.get(`${API_URL}/orders/statistics`);
+      const statsResponse = await api.get('/orders/statistics');
       setStatistics(statsResponse.data);
 
-      const ordersResponse = await axios.get(`${API_URL}/orders`);
+      const ordersResponse = await api.get('/orders');
       setRecentOrders(ordersResponse.data.slice(0, 5));
-    } catch (error) {
-      console.error('Ошибка загрузки данных дашборда:', error);
+    } catch {
     } finally {
       setLoading(false);
     }

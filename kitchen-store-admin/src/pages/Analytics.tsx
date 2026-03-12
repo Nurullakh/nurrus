@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Statistic, Table, Spin, Select, DatePicker } from 'antd';
+import { Card, Row, Col, Statistic, Table, Spin, Select, DatePicker, message } from 'antd';
 import {
   ShoppingCartOutlined,
   UserOutlined,
@@ -8,12 +8,10 @@ import {
   FallOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import axios from 'axios';
+import { api } from '../lib/api';
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
-
-const API_URL = 'http://localhost:3001';
 
 interface AnalyticsData {
   totalOrders: number;
@@ -42,6 +40,12 @@ const AnalyticsPage: React.FC = () => {
     dayjs().subtract(1, 'month'),
     dayjs(),
   ]);
+  const trends = analyticsData?.trends ?? {
+    orders: 0,
+    revenue: 0,
+    customers: 0,
+    averageCheck: 0,
+  };
 
   useEffect(() => {
     fetchAnalytics();
@@ -50,7 +54,7 @@ const AnalyticsPage: React.FC = () => {
   const fetchAnalytics = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${API_URL}/analytics`, {
+      const response = await api.get('/analytics', {
         params: {
           period,
           startDate: dateRange[0].format('YYYY-MM-DD'),
@@ -58,26 +62,9 @@ const AnalyticsPage: React.FC = () => {
         },
       });
       setAnalyticsData(response.data);
-    } catch (error) {
-      console.error('Ошибка загрузки аналитики:', error);
-      // Используем демо-данные при ошибке
-      setAnalyticsData({
-        totalOrders: 1254,
-        totalRevenue: 8450000,
-        totalCustomers: 342,
-        averageCheck: 67350,
-        topProducts: [
-          { id: 1, name: 'Кухня "Прованс"', sales: 45, revenue: 1350000 },
-          { id: 2, name: 'Диван "Комфорт"', sales: 32, revenue: 960000 },
-          { id: 3, name: 'Шкаф "Модерн"', sales: 28, revenue: 840000 },
-        ],
-        trends: {
-          orders: 12,
-          revenue: 18,
-          customers: 8,
-          averageCheck: -3,
-        },
-      });
+    } catch {
+      message.error('Не удалось загрузить аналитику');
+      setAnalyticsData(null);
     } finally {
       setLoading(false);
     }
@@ -141,10 +128,11 @@ const AnalyticsPage: React.FC = () => {
               value={analyticsData?.totalOrders || 0}
               prefix={<ShoppingCartOutlined />}
               valueStyle={{ color: '#3f8600' }}
-              suffix={analyticsData?.trends.orders > 0 ? <RiseOutlined style={{ fontSize: 14 }} /> : <FallOutlined style={{ fontSize: 14 }} />}
+              suffix={trends.orders > 0 ? <RiseOutlined style={{ fontSize: 14 }} /> : <FallOutlined style={{ fontSize: 14 }} />}
             />
             <div style={{ marginTop: 8, fontSize: 12, color: '#666' }}>
-              {analyticsData?.trends.orders > 0 ? '+' : ''}{analyticsData?.trends.orders}% за период
+              {trends.orders > 0 ? '+' : ''}
+              {trends.orders}% за период
             </div>
           </Card>
         </Col>
@@ -158,7 +146,8 @@ const AnalyticsPage: React.FC = () => {
               valueStyle={{ color: '#3f8600' }}
             />
             <div style={{ marginTop: 8, fontSize: 12, color: '#666' }}>
-              {analyticsData?.trends.revenue > 0 ? '+' : ''}{analyticsData?.trends.revenue}% за период
+              {trends.revenue > 0 ? '+' : ''}
+              {trends.revenue}% за период
             </div>
           </Card>
         </Col>
@@ -171,7 +160,8 @@ const AnalyticsPage: React.FC = () => {
               valueStyle={{ color: '#1890ff' }}
             />
             <div style={{ marginTop: 8, fontSize: 12, color: '#666' }}>
-              {analyticsData?.trends.customers > 0 ? '+' : ''}{analyticsData?.trends.customers}% за период
+              {trends.customers > 0 ? '+' : ''}
+              {trends.customers}% за период
             </div>
           </Card>
         </Col>
@@ -181,11 +171,12 @@ const AnalyticsPage: React.FC = () => {
               title="Средний чек"
               value={analyticsData?.averageCheck || 0}
               suffix="₽"
-              valueStyle={{ color: analyticsData?.trends.averageCheck < 0 ? '#cf1322' : '#3f8600' }}
-              prefix={analyticsData?.trends.averageCheck < 0 ? <FallOutlined style={{ fontSize: 14 }} /> : <RiseOutlined style={{ fontSize: 14 }} />}
+              valueStyle={{ color: trends.averageCheck < 0 ? '#cf1322' : '#3f8600' }}
+              prefix={trends.averageCheck < 0 ? <FallOutlined style={{ fontSize: 14 }} /> : <RiseOutlined style={{ fontSize: 14 }} />}
             />
             <div style={{ marginTop: 8, fontSize: 12, color: '#666' }}>
-              {analyticsData?.trends.averageCheck > 0 ? '+' : ''}{analyticsData?.trends.averageCheck}% за период
+              {trends.averageCheck > 0 ? '+' : ''}
+              {trends.averageCheck}% за период
             </div>
           </Card>
         </Col>

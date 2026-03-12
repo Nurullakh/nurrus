@@ -22,13 +22,11 @@ import {
   ReloadOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import axios from 'axios';
+import { api } from '../lib/api';
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
 const { TextArea } = Input;
-
-const API_URL = 'http://localhost:3001';
 
 interface Promotion {
   id: number;
@@ -60,7 +58,7 @@ const PromotionsPage: React.FC = () => {
   const fetchPromotions = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${API_URL}/promotions`);
+      const response = await api.get('/promotions');
       setPromotions(response.data);
     } catch (error) {
       message.error('Ошибка загрузки акций');
@@ -72,7 +70,7 @@ const PromotionsPage: React.FC = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get(`${API_URL}/categories`);
+      const response = await api.get('/categories');
       setCategories(response.data);
     } catch (error) {
       console.error('Ошибка загрузки категорий:', error);
@@ -96,7 +94,7 @@ const PromotionsPage: React.FC = () => {
 
   const handleToggleStatus = async (id: number) => {
     try {
-      await axios.put(`${API_URL}/promotions/${id}/toggle`);
+      await api.put(`/promotions/${id}/toggle`);
       message.success('Статус акции изменен');
       fetchPromotions();
     } catch (error) {
@@ -113,7 +111,7 @@ const PromotionsPage: React.FC = () => {
       okType: 'danger',
       onOk: async () => {
         try {
-          await axios.delete(`${API_URL}/promotions/${id}`);
+          await api.delete(`/promotions/${id}`);
           message.success('Акция удалена');
           fetchPromotions();
         } catch (error) {
@@ -140,10 +138,10 @@ const PromotionsPage: React.FC = () => {
       };
 
       if (editingPromotion) {
-        await axios.put(`${API_URL}/promotions/${editingPromotion.id}`, promotionData);
+        await api.put(`/promotions/${editingPromotion.id}`, promotionData);
         message.success('Акция обновлена');
       } else {
-        await axios.post(`${API_URL}/promotions`, promotionData);
+        await api.post('/promotions', promotionData);
         message.success('Акция создана');
       }
 
@@ -327,8 +325,7 @@ const PromotionsPage: React.FC = () => {
                       min={0}
                       max={100}
                       style={{ width: '100%' }}
-                      formatter={value => `${value}%`}
-                      parser={value => value?.replace('%', '') || ''}
+                      addonAfter="%"
                     />
                   </Form.Item>
                 );

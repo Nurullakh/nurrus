@@ -21,12 +21,10 @@ import {
   ReloadOutlined,
 } from '@ant-design/icons';
 import type { UploadFile } from 'antd/es/upload/interface';
-import axios from 'axios';
+import { API_URL, api } from '../lib/api';
 
 const { TextArea } = Input;
 const { Option } = Select;
-
-const API_URL = 'http://localhost:3001';
 
 interface Category {
   id: number;
@@ -55,7 +53,7 @@ const CategoriesPage: React.FC = () => {
   const fetchCategories = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${API_URL}/categories`);
+      const response = await api.get('/categories');
       setCategories(response.data);
     } catch (error) {
       message.error('Ошибка загрузки категорий');
@@ -88,7 +86,7 @@ const CategoriesPage: React.FC = () => {
       okType: 'danger',
       onOk: async () => {
         try {
-          await axios.delete(`${API_URL}/categories/${id}`);
+          await api.delete(`/categories/${id}`);
           message.success('Категория удалена');
           fetchCategories();
         } catch (error: any) {
@@ -115,12 +113,12 @@ const CategoriesPage: React.FC = () => {
       }
 
       if (editingCategory) {
-        await axios.put(`${API_URL}/categories/${editingCategory.id}`, formData, {
+        await api.put(`/categories/${editingCategory.id}`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         message.success('Категория обновлена');
       } else {
-        await axios.post(`${API_URL}/categories`, formData, {
+        await api.post('/categories', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         message.success('Категория создана');

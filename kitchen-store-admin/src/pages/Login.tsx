@@ -1,32 +1,53 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Form, Input, Button, Card, message } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { api, ADMIN_TOKEN_KEY, ADMIN_USER_KEY } from '../lib/api';
 
-const API_URL = 'http://localhost:3001';
+interface LoginFormValues {
+  email: string;
+  password: string;
+}
 
 const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = async (values: any) => {
+  useEffect(() => {
+    if (localStorage.getItem(ADMIN_TOKEN_KEY)) {
+      navigate('/admin/dashboard', { replace: true });
+    }
+  }, [navigate]);
+
+  const handleLogin = async (values: LoginFormValues) => {
     setLoading(true);
     try {
-      const response = await axios.post(`${API_URL}/auth/login`, {
+      const response = await api.post('/auth/login', {
         email: values.email,
         password: values.password,
       });
 
-      // Сохраняем токен
-      localStorage.setItem('admin_token', response.data.token);
-      localStorage.setItem('admin_user', JSON.stringify(response.data.user));
+      const token = response.data?.access_token ?? response.data?.token;
+      if (!token) {
+        throw new Error('Токен не получен');
+      }
+
+      localStorage.setItem(ADMIN_TOKEN_KEY, token);
+      localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(response.data.user ?? null));
 
       message.success('Вход выполнен успешно');
       navigate('/admin/dashboard');
-    } catch (error: any) {
-      message.error(error.response?.data?.message || 'Ошибка входа');
-      console.error(error);
+    } catch (error: unknown) {
+      const errorMessage =
+        typeof error === 'object' &&
+        error !== null &&
+        'response' in error &&
+        typeof (error as { response?: { data?: { message?: string } } }).response?.data
+          ?.message === 'string'
+          ? (error as { response?: { data?: { message?: string } } }).response?.data
+              ?.message
+          : 'Ошибка входа';
+      message.error(errorMessage);
     } finally {
       setLoading(false);
     }

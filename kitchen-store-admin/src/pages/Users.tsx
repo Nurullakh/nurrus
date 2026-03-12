@@ -23,11 +23,9 @@ import {
   ReloadOutlined,
 } from '@ant-design/icons';
 import type { UploadFile } from 'antd/es/upload/interface';
-import axios from 'axios';
+import { API_URL, api } from '../lib/api';
 
 const { Option } = Select;
-
-const API_URL = 'http://localhost:3001';
 
 interface User {
   id: number;
@@ -56,7 +54,7 @@ const UsersPage: React.FC = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${API_URL}/users`);
+      const response = await api.get('/users');
       setUsers(response.data);
     } catch (error) {
       message.error('Ошибка загрузки пользователей');
@@ -82,7 +80,7 @@ const UsersPage: React.FC = () => {
 
   const handleToggleStatus = async (id: number) => {
     try {
-      await axios.put(`${API_URL}/users/${id}/toggle-status`);
+      await api.put(`/users/${id}/toggle-status`);
       message.success('Статус пользователя изменен');
       fetchUsers();
     } catch (error) {
@@ -99,7 +97,7 @@ const UsersPage: React.FC = () => {
       okType: 'danger',
       onOk: async () => {
         try {
-          await axios.delete(`${API_URL}/users/${id}`);
+          await api.delete(`/users/${id}`);
           message.success('Пользователь удален');
           fetchUsers();
         } catch (error) {
@@ -127,12 +125,12 @@ const UsersPage: React.FC = () => {
       }
 
       if (editingUser) {
-        await axios.put(`${API_URL}/users/${editingUser.id}`, formData, {
+        await api.put(`/users/${editingUser.id}`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         message.success('Пользователь обновлен');
       } else {
-        await axios.post(`${API_URL}/users`, formData, {
+        await api.post('/users', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         message.success('Пользователь создан');

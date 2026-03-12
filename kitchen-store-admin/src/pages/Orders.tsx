@@ -16,8 +16,7 @@ import {
   SearchOutlined,
   ReloadOutlined,
 } from '@ant-design/icons';
-import axios from 'axios';
-import { API_URL } from '../lib/constants';
+import { api } from '../lib/api';
 
 const { Option } = Select;
 
@@ -56,7 +55,7 @@ const OrdersPage: React.FC = () => {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${API_URL}/orders`);
+      const response = await api.get('/orders');
       setOrders(response.data);
     } catch (error) {
       message.error('Ошибка загрузки заказов');
@@ -73,7 +72,7 @@ const OrdersPage: React.FC = () => {
 
   const handleStatusChange = async (orderId: number, newStatus: Order['status']) => {
     try {
-      await axios.put(`${API_URL}/orders/${orderId}/status`, {
+      await api.put(`/orders/${orderId}/status`, {
         status: newStatus,
       });
       message.success('Статус заказа обновлен');
