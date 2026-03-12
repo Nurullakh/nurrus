@@ -28,6 +28,8 @@ import { ViewHistoryModule } from './view-history/view-history.module';
 import { ViewHistory } from './view-history/view-history.entity';
 import { ContactsModule } from './contacts/contacts.module';
 import { ContactRequest } from './contacts/contacts.entity';
+import { NewsletterModule } from './newsletter/newsletter.module';
+import { NewsletterSubscription } from './newsletter/newsletter.entity';
 
 @Module({
   imports: [
@@ -39,7 +41,7 @@ import { ContactRequest } from './contacts/contacts.entity';
       username: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      entities: [Product, CartItem, FavoriteItem, Order, Banner, Promotion, Category, User, Review, Address, Comparison, ViewHistory, ContactRequest],
+      entities: [Product, CartItem, FavoriteItem, Order, Banner, Promotion, Category, User, Review, Address, Comparison, ViewHistory, ContactRequest, NewsletterSubscription],
       synchronize: true,
       logging: true,
     }),
@@ -57,6 +59,7 @@ import { ContactRequest } from './contacts/contacts.entity';
     ComparisonsModule,
     ViewHistoryModule,
     ContactsModule,
+    NewsletterModule,
   ],
 })
 export class AppModule {}

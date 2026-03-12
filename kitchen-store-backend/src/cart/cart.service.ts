@@ -20,6 +20,7 @@ export class CartService {
 
   async addItem(addToCartDto: AddToCartDto): Promise<CartItem> {
     const userId = addToCartDto.userId || 'guest';
+    const requestedQuantity = addToCartDto.quantity ?? 1;
 
     // Проверяем, есть ли уже этот товар в корзине
     const existingItem = await this.cartRepository.findOne({
@@ -27,8 +28,9 @@ export class CartService {
     });
 
     if (existingItem) {
-      // Увеличиваем количество
-      existingItem.quantity += addToCartDto.quantity || 1;
+      // Если количество пришло явно (как в add-to-cart), используем его как итоговое.
+      // Это предотвращает "воскрешение" старого quantity после удаления/повторного добавления.
+      existingItem.quantity = requestedQuantity;
       return this.cartRepository.save(existingItem);
     }
 
@@ -36,7 +38,7 @@ export class CartService {
     const cartItem = this.cartRepository.create({
       ...addToCartDto,
       userId,
-      quantity: addToCartDto.quantity || 1,
+      quantity: requestedQuantity,
     });
 
     return this.cartRepository.save(cartItem);
@@ -57,7 +59,13 @@ export class CartService {
   }
 
   async removeItem(id: number, userId: string = 'guest'): Promise<void> {
-    await this.cartRepository.delete({ id, userId });
+    const existingItem = await this.cartRepository.findOne({ where: { id, userId } });
+    if (!existingItem) {
+      return;
+    }
+
+    // Чистим все дубли этого товара в корзине пользователя (если вдруг появились из-за гонок).
+    await this.cartRepository.delete({ productId: existingItem.productId, userId });
   }
 
   async clearCart(userId: string = 'guest'): Promise<void> {
