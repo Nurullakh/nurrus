@@ -1,17 +1,16 @@
 "use client";
 
 import React from "react";
-import { useSelector, useDispatch } from "react-redux";
 import { Link } from "@/next/routerShim";
-import { RootState, AppDispatch } from "@/app/store";
+import { useAppDispatch, useAppSelector } from "@/app/store/hooks";
 import { removeFromFavoritesAsync } from "@/entities/favorites/model/favorites-slice";
 import { addToCartAsync } from "@/entities/cart/model/cart-slice";
 import { getUploadUrl } from "@/shared/config/api";
 import { formatPrice } from "@/shared/lib/price/format-price";
 
 const FavoritesPage: React.FC = () => {
-  const dispatch = useDispatch<AppDispatch>();
-  const { items } = useSelector((state: RootState) => state.favorites);
+  const dispatch = useAppDispatch();
+  const { items } = useAppSelector((state) => state.favorites);
 
   const handleRemove = (productId: number) => {
     dispatch(removeFromFavoritesAsync(productId));
@@ -69,6 +68,7 @@ const FavoritesPage: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {items.map((item) => {
           const imageUrl = item.images?.[0] || item.image;
+          const productId = item.productId || item.id;
 
           return (
             <div
@@ -91,7 +91,7 @@ const FavoritesPage: React.FC = () => {
               </button>
 
               {/* Image */}
-              <Link to={`/product/${item.id}`}>
+              <Link to={`/product/${productId}`}>
                 <div className="w-full h-48 bg-gray-100 rounded-lg overflow-hidden mb-4">
                   {imageUrl ? (
                     <img
@@ -122,7 +122,7 @@ const FavoritesPage: React.FC = () => {
               {/* Content */}
               <div className="space-y-2">
                 <Link
-                  to={`/product/${item.id}`}
+                  to={`/product/${productId}`}
                   className="text-sm font-medium text-gray-800 hover:text-blue-600 line-clamp-2 block"
                 >
                   {item.name}

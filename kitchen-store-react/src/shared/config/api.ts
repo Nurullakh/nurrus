@@ -12,7 +12,5 @@ export const API_ROUTES = {
   favorites: "/favorites",
 } as const;
 
-export const buildApiUrl = (path: string) => `${API_URL}${path}`;
-
 export const getUploadUrl = (fileName?: string | null) =>
   fileName ? `${API_URL}/uploads/${fileName}` : "";

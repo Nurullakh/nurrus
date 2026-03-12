@@ -1,18 +1,17 @@
 "use client";
 
 import React from "react";
-import { useSelector, useDispatch } from "react-redux";
 import { Link } from "@/next/routerShim";
-import { RootState, AppDispatch } from "@/app/store";
+import { useAppDispatch, useAppSelector } from "@/app/store/hooks";
 import { removeFromCartAsync, updateQuantityAsync } from "@/entities/cart/model/cart-slice";
 import { toggleFavoriteAsync } from "@/entities/favorites/model/favorites-slice";
 import { getUploadUrl } from "@/shared/config/api";
 import { formatPrice } from "@/shared/lib/price/format-price";
 
 const CartPage: React.FC = () => {
-  const dispatch = useDispatch<AppDispatch>();
-  const { items } = useSelector((state: RootState) => state.cart);
-  const favoriteItems = useSelector((state: RootState) => state.favorites.items);
+  const dispatch = useAppDispatch();
+  const { items } = useAppSelector((state) => state.cart);
+  const favoriteItems = useAppSelector((state) => state.favorites.items);
   const [selectedItems, setSelectedItems] = React.useState<Record<number, boolean>>(
     {},
   );
@@ -110,7 +109,7 @@ const CartPage: React.FC = () => {
                 </div>
 
                 {/* Image */}
-                <Link to={`/product/${item.id}`} className="flex-shrink-0">
+                <Link to={`/product/${productId}`} className="flex-shrink-0">
                   <div className="w-24 h-24 bg-gray-100 rounded-lg overflow-hidden">
                     {imageUrl ? (
                       <img
@@ -141,7 +140,7 @@ const CartPage: React.FC = () => {
                 {/* Content */}
                 <div className="flex-1 min-w-0">
                   <Link
-                    to={`/product/${item.id}`}
+                    to={`/product/${productId}`}
                     className="hover:text-[#4b8839] font-medium mb-1 block"
                   >
                     {item.name}

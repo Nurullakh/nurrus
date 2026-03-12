@@ -44,6 +44,7 @@ const readStateFromSearch = (search: URLSearchParams) => {
   if (!raw) {
     return null;
   }
+  sessionStorage.removeItem(`${NAV_STATE_STORAGE_PREFIX}${id}`);
   try {
     return JSON.parse(raw);
   } catch {
@@ -179,9 +180,3 @@ export const Link = React.forwardRef<HTMLAnchorElement, LinkProps>(
 );
 
 Link.displayName = "Link";
-
-export const BrowserRouter = ({ children }: { children: React.ReactNode }) => <>{children}</>;
-
-export const Routes = ({ children }: { children: React.ReactNode }) => <>{children}</>;
-
-export const Route = ({ element }: { element: React.ReactElement }) => element;
