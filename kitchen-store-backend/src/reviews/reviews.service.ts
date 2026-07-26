@@ -1,7 +1,6 @@
 import {
   Injectable,
   NotFoundException,
-  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -31,20 +30,6 @@ export class ReviewsService {
       );
     }
 
-    // Проверяем, не оставлял ли пользователь уже отзыв на этот товар
-    if (createReviewDto.userId) {
-      const existingReview = await this.reviewsRepository.findOne({
-        where: {
-          productId: createReviewDto.productId,
-          userId: createReviewDto.userId,
-        },
-      });
-
-      if (existingReview) {
-        throw new BadRequestException('Вы уже оставили отзыв на этот товар');
-      }
-    }
-
     const review = this.reviewsRepository.create({
       ...createReviewDto,
       isVerified: !!createReviewDto.orderNumber, // Если есть номер заказа, значит покупка подтверждена
@@ -58,11 +43,21 @@ export class ReviewsService {
     return savedReview;
   }
 
-  async findAll(productId?: number, page: number = 1, limit: number = 10) {
+  async findAll(
+    productId?: number,
+    page: number = 1,
+    limit: number = 10,
+    includeUnpublished: boolean = false,
+  ) {
     const queryBuilder = this.reviewsRepository
       .createQueryBuilder('review')
-      .leftJoinAndSelect('review.user', 'user')
-      .where('review.isPublished = :isPublished', { isPublished: true });
+      .leftJoinAndSelect('review.user', 'user');
+
+    if (!includeUnpublished) {
+      queryBuilder.where('review.isPublished = :isPublished', {
+        isPublished: true,
+      });
+    }
 
     if (productId) {
       queryBuilder.andWhere('review.productId = :productId', { productId });
@@ -117,12 +112,6 @@ export class ReviewsService {
 
     // Обновляем рейтинг товара после удаления отзыва
     await this.updateProductRating(productId);
-  }
-
-  async markHelpful(id: number): Promise<Review> {
-    const review = await this.findOne(id);
-    review.helpfulCount += 1;
-    return await this.reviewsRepository.save(review);
   }
 
   async getProductReviewsStats(productId: number) {

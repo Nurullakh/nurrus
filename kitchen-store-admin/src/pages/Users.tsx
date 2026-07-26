@@ -107,6 +107,16 @@ const UsersPage: React.FC = () => {
     });
   };
 
+  const handleApproveSeller = async (id: number) => {
+    try {
+      await api.put(`/users/${id}/approve-seller`);
+      message.success('Продавец подтвержден');
+      fetchUsers();
+    } catch (error: any) {
+      message.error(error?.response?.data?.message || 'Ошибка подтверждения продавца');
+    }
+  };
+
   const handleSubmit = async (values: any) => {
     try {
       const formData = new FormData();
@@ -146,22 +156,26 @@ const UsersPage: React.FC = () => {
 
   const roleColors: Record<string, string> = {
     admin: 'red',
+    seller: 'green',
     manager: 'orange',
     customer: 'blue',
   };
 
   const roleTexts: Record<string, string> = {
     admin: 'Администратор',
+    seller: 'Продавец',
     manager: 'Менеджер',
     customer: 'Клиент',
   };
 
   const statusColors: Record<string, string> = {
+    pending: 'gold',
     active: 'green',
     blocked: 'red',
   };
 
   const statusTexts: Record<string, string> = {
+    pending: 'Ожидает подтверждения',
     active: 'Активен',
     blocked: 'Заблокирован',
   };
@@ -240,6 +254,14 @@ const UsersPage: React.FC = () => {
       fixed: 'right' as const,
       render: (_: any, record: User) => (
         <Space>
+          {record.role === 'seller' && record.status === 'pending' && (
+            <Button
+              type="text"
+              icon={<CheckCircleOutlined />}
+              onClick={() => handleApproveSeller(record.id)}
+              title="Подтвердить продавца"
+            />
+          )}
           <Button
             type="text"
             icon={record.status === 'active' ? <StopOutlined /> : <CheckCircleOutlined />}
@@ -329,6 +351,7 @@ const UsersPage: React.FC = () => {
           >
             <Select>
               <Option value="customer">Клиент</Option>
+              <Option value="seller">Продавец</Option>
               <Option value="manager">Менеджер</Option>
               <Option value="admin">Администратор</Option>
             </Select>
@@ -341,6 +364,7 @@ const UsersPage: React.FC = () => {
             rules={[{ required: true, message: 'Выберите статус' }]}
           >
             <Select>
+              <Option value="pending">Ожидает подтверждения</Option>
               <Option value="active">Активен</Option>
               <Option value="blocked">Заблокирован</Option>
             </Select>

@@ -15,6 +15,8 @@ import { Category } from '../categories/categories.entity';
 @Index(['brand'])
 @Index(['is_available'])
 @Index(['price'])
+@Index(['ownerId'])
+@Index(['moderationStatus'])
 export class Product {
   @PrimaryGeneratedColumn()
   id: number;
@@ -61,6 +63,21 @@ export class Product {
 
   @Column({ default: 0 })
   stock: number;
+
+  @Column({ type: 'int', nullable: true })
+  ownerId: number | null;
+
+  @Column({ default: 'pending' })
+  moderationStatus: string; // 'draft' | 'pending' | 'approved' | 'rejected'
+
+  @Column({ type: 'text', nullable: true })
+  moderationComment: string | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  moderatedAt: Date | null;
+
+  @Column({ type: 'int', nullable: true })
+  moderatedById: number | null;
 
   @CreateDateColumn()
   createdAt: Date;

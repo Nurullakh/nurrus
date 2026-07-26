@@ -8,6 +8,10 @@ import { useAppDispatch, useAppSelector } from "@/app/store/hooks";
 import { useGetProductByIdQuery } from "@/entities/product/api/products-api";
 import { getUploadUrl } from "@/shared/config/api";
 import { formatPrice } from "@/shared/lib/price/format-price";
+import Lightbox from "yet-another-react-lightbox";
+import Zoom from "yet-another-react-lightbox/plugins/zoom";
+import "yet-another-react-lightbox/styles.css";
+import { ReviewsSection } from "@/features/reviews/ui/reviews-section";
 
 const ProductPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -17,6 +21,8 @@ const ProductPage: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [dragOffset, setDragOffset] = useState(0);
+
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   const favorites = useAppSelector((state) => state.favorites.items);
   const cartItems = useAppSelector((state) => state.cart.items);
@@ -82,23 +88,25 @@ const ProductPage: React.FC = () => {
   }, [product]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (lightboxOpen) return;
+
     if (e.key === "ArrowLeft") {
       handlePrevImage();
     } else if (e.key === "ArrowRight") {
       handleNextImage();
     }
-  }, [handlePrevImage, handleNextImage]);
+  }, [lightboxOpen, handlePrevImage, handleNextImage]);
 
   // Автопрокрутка слайдера
   useEffect(() => {
-    if (!isAutoPlaying || !product?.images || product.images.length <= 1) return;
+    if (!isAutoPlaying || lightboxOpen || !product?.images || product.images.length <= 1) return;
 
     const interval = setInterval(() => {
       handleNextImage();
     }, 4000);
 
     return () => clearInterval(interval);
-  }, [isAutoPlaying, handleNextImage, product]);
+  }, [isAutoPlaying, lightboxOpen, handleNextImage, product]);
 
   // Клавиатурная навигация
   useEffect(() => {
@@ -191,7 +199,7 @@ const ProductPage: React.FC = () => {
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
-            style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+            style={{ cursor: isDragging ? 'grabbing' : 'zoom-in' }}
           >
             {/* Main Image with Transition and Drag Effect */}
             <div
@@ -200,6 +208,7 @@ const ProductPage: React.FC = () => {
                 transform: isDragging ? `translateX(${dragOffset}px)` : 'translateX(0)',
                 transition: isDragging ? 'none' : 'transform 0.3s ease-out',
               }}
+              onClick={() => { if (!isDragging) setLightboxOpen(true); }}
             >
               {images.map((img, index) => (
                 <img
@@ -399,6 +408,18 @@ const ProductPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      <ReviewsSection productId={product.id} />
+
+      <Lightbox
+        open={lightboxOpen}
+        close={() => setLightboxOpen(false)}
+        index={selectedImage}
+        slides={images.map((src) => ({ src }))}
+        plugins={[Zoom]}
+        zoom={{ maxZoomPixelRatio: 3, scrollToZoom: true }}
+        on={{ view: ({ index }) => setSelectedImage(index) }}
+      />
     </div>
   );
 };

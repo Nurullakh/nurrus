@@ -64,11 +64,13 @@ export class ReviewsController {
     @Query('productId') productId?: string,
     @Query('page') page: string = '1',
     @Query('limit') limit: string = '10',
+    @Query('includeUnpublished') includeUnpublished?: string,
   ) {
     return this.reviewsService.findAll(
       productId ? parseInt(productId, 10) : undefined,
       parseInt(page, 10),
       parseInt(limit, 10),
+      includeUnpublished === 'true',
     );
   }
 
@@ -85,11 +87,6 @@ export class ReviewsController {
   @Put(':id')
   update(@Param('id') id: string, @Body() updateReviewDto: UpdateReviewDto) {
     return this.reviewsService.update(+id, updateReviewDto);
-  }
-
-  @Post(':id/helpful')
-  markHelpful(@Param('id') id: string) {
-    return this.reviewsService.markHelpful(+id);
   }
 
   @Delete(':id')

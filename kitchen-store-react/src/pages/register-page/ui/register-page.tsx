@@ -58,6 +58,7 @@ const RegisterPage: React.FC = () => {
       // Сохраняем токен и пользователя
       localStorage.setItem("token", data.access_token);
       localStorage.setItem("user", JSON.stringify(data.user));
+      window.dispatchEvent(new Event("auth-change"));
       navigate("/profile");
     } catch (err: unknown) {
       const message = extractApiErrorMessage(err, "Ошибка соединения с сервером");

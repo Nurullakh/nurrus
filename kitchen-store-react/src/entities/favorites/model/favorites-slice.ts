@@ -2,7 +2,19 @@ import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import axios from "axios";
 import { API_URL, API_ROUTES } from "@/shared/config/api";
 
-const USER_ID = "guest";
+const getUserId = (): string => {
+  if (typeof window === "undefined") return "guest";
+  try {
+    const raw = localStorage.getItem("user");
+    if (raw && raw !== "undefined") {
+      const user = JSON.parse(raw);
+      if (user?.id) return String(user.id);
+    }
+  } catch {
+    // ignore
+  }
+  return "guest";
+};
 
 export interface FavoriteItem {
   id: number;
@@ -38,7 +50,7 @@ export const fetchFavorites = createAsyncThunk(
   "favorites/fetchFavorites",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${API_URL}${API_ROUTES.favorites}?userId=${USER_ID}`);
+      const response = await axios.get(`${API_URL}${API_ROUTES.favorites}?userId=${getUserId()}`);
       return response.data;
     } catch (error: unknown) {
       return rejectWithValue(getAxiosErrorMessage(error, "Ошибка загрузки избранного"));
@@ -61,7 +73,7 @@ export const toggleFavoriteAsync = createAsyncThunk(
         images: item.images,
         article: item.article,
         available: item.available,
-        userId: USER_ID,
+        userId: getUserId(),
       });
       return { ...response.data, productId: item.id };
     } catch (error: unknown) {
@@ -74,7 +86,7 @@ export const removeFromFavoritesAsync = createAsyncThunk(
   "favorites/removeFromFavorites",
   async (productId: number, { rejectWithValue }) => {
     try {
-      await axios.delete(`${API_URL}${API_ROUTES.favorites}/${productId}?userId=${USER_ID}`);
+      await axios.delete(`${API_URL}${API_ROUTES.favorites}/${productId}?userId=${getUserId()}`);
       return productId;
     } catch (error: unknown) {
       return rejectWithValue(getAxiosErrorMessage(error, "Ошибка удаления из избранного"));
@@ -86,7 +98,7 @@ export const clearFavoritesAsync = createAsyncThunk(
   "favorites/clearFavorites",
   async (_, { rejectWithValue }) => {
     try {
-      await axios.delete(`${API_URL}${API_ROUTES.favorites}?userId=${USER_ID}`);
+      await axios.delete(`${API_URL}${API_ROUTES.favorites}?userId=${getUserId()}`);
       return true;
     } catch (error: unknown) {
       return rejectWithValue(getAxiosErrorMessage(error, "Ошибка очистки избранного"));

@@ -30,6 +30,8 @@ import { ContactsModule } from './contacts/contacts.module';
 import { ContactRequest } from './contacts/contacts.entity';
 import { NewsletterModule } from './newsletter/newsletter.module';
 import { NewsletterSubscription } from './newsletter/newsletter.entity';
+import { FinancePayout } from './finance/finance-payout.entity';
+import { FinanceModule } from './finance/finance.module';
 
 @Module({
   imports: [
@@ -56,6 +58,7 @@ import { NewsletterSubscription } from './newsletter/newsletter.entity';
         ViewHistory,
         ContactRequest,
         NewsletterSubscription,
+        FinancePayout,
       ],
       synchronize: process.env.NODE_ENV !== 'production',
       logging: process.env.NODE_ENV !== 'production',
@@ -75,6 +78,7 @@ import { NewsletterSubscription } from './newsletter/newsletter.entity';
     ViewHistoryModule,
     ContactsModule,
     NewsletterModule,
+    FinanceModule,
   ],
 })
 export class AppModule {}

@@ -9,6 +9,7 @@ import {
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { api } from '../lib/api';
+import { getCurrentAdminUser } from '../lib/auth';
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
@@ -33,6 +34,8 @@ interface AnalyticsData {
 }
 
 const AnalyticsPage: React.FC = () => {
+  const currentUser = getCurrentAdminUser();
+  const isAdmin = currentUser?.role === 'admin';
   const [loading, setLoading] = useState(false);
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [period, setPeriod] = useState<'week' | 'month' | 'year'>('month');
@@ -54,13 +57,55 @@ const AnalyticsPage: React.FC = () => {
   const fetchAnalytics = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/analytics', {
-        params: {
-          period,
-          startDate: dateRange[0].format('YYYY-MM-DD'),
-          endDate: dateRange[1].format('YYYY-MM-DD'),
+      const [statsResponse, productsResponse] = await Promise.all([
+        api.get('/products/admin/statistics'),
+        api.get('/products/admin/list', {
+          params: {
+            page: 1,
+            limit: 100,
+            search: undefined,
+          },
+        }),
+      ]);
+      const stats = statsResponse.data as {
+        totalProducts: number;
+        availableProducts: number;
+        outOfStockProducts: number;
+        totalStock: number;
+      };
+      const products = (productsResponse.data?.data || []) as Array<{
+        id: number;
+        name: string;
+        stock: number;
+        price: number;
+      }>;
+      const topProducts = [...products]
+        .sort((a, b) => (b.stock || 0) - (a.stock || 0))
+        .slice(0, 3)
+        .map((product) => ({
+          id: product.id,
+          name: product.name,
+          sales: product.stock || 0,
+          revenue: (product.price || 0) * (product.stock || 0),
+        }));
+
+      const response = {
+        data: {
+          totalOrders: stats.totalProducts,
+          totalRevenue: stats.totalStock,
+          totalCustomers: stats.availableProducts,
+          averageCheck: stats.totalProducts
+            ? Math.round(stats.totalStock / stats.totalProducts)
+            : 0,
+          topProducts,
+          trends: {
+            orders: 0,
+            revenue: 0,
+            customers: 0,
+            averageCheck: 0,
+          },
         },
-      });
+      };
       setAnalyticsData(response.data);
     } catch {
       message.error('Не удалось загрузить аналитику');
@@ -77,13 +122,13 @@ const AnalyticsPage: React.FC = () => {
       key: 'name',
     },
     {
-      title: 'Продано',
+      title: isAdmin ? 'Остаток' : 'Остаток',
       dataIndex: 'sales',
       key: 'sales',
       align: 'center' as const,
     },
     {
-      title: 'Выручка',
+      title: 'Потенциальная выручка',
       dataIndex: 'revenue',
       key: 'revenue',
       render: (value: number) => `${value.toLocaleString('ru-RU')} ₽`,
@@ -124,7 +169,7 @@ const AnalyticsPage: React.FC = () => {
         <Col span={6}>
           <Card>
             <Statistic
-              title="Всего заказов"
+              title="Всего товаров"
               value={analyticsData?.totalOrders || 0}
               prefix={<ShoppingCartOutlined />}
               valueStyle={{ color: '#3f8600' }}
@@ -139,10 +184,9 @@ const AnalyticsPage: React.FC = () => {
         <Col span={6}>
           <Card>
             <Statistic
-              title="Выручка"
+              title="Остаток"
               value={analyticsData?.totalRevenue || 0}
               prefix={<DollarOutlined />}
-              suffix="₽"
               valueStyle={{ color: '#3f8600' }}
             />
             <div style={{ marginTop: 8, fontSize: 12, color: '#666' }}>
@@ -154,7 +198,7 @@ const AnalyticsPage: React.FC = () => {
         <Col span={6}>
           <Card>
             <Statistic
-              title="Новых клиентов"
+              title="Активных товаров"
               value={analyticsData?.totalCustomers || 0}
               prefix={<UserOutlined />}
               valueStyle={{ color: '#1890ff' }}
@@ -168,9 +212,8 @@ const AnalyticsPage: React.FC = () => {
         <Col span={6}>
           <Card>
             <Statistic
-              title="Средний чек"
+              title="Средний остаток на товар"
               value={analyticsData?.averageCheck || 0}
-              suffix="₽"
               valueStyle={{ color: trends.averageCheck < 0 ? '#cf1322' : '#3f8600' }}
               prefix={trends.averageCheck < 0 ? <FallOutlined style={{ fontSize: 14 }} /> : <RiseOutlined style={{ fontSize: 14 }} />}
             />
@@ -184,7 +227,7 @@ const AnalyticsPage: React.FC = () => {
 
       <Row gutter={16}>
         <Col span={12}>
-          <Card title="Топ-3 товаров по продажам">
+          <Card title="Топ-3 товаров по остаткам">
             <Table
               columns={columns}
               dataSource={analyticsData?.topProducts || []}

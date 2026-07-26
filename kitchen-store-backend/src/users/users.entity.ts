@@ -24,10 +24,10 @@ export class User {
   phone: string;
 
   @Column({ default: 'customer' })
-  role: string; // 'admin' | 'manager' | 'customer'
+  role: string; // 'admin' | 'seller' | 'manager' | 'customer'
 
   @Column({ default: 'active' })
-  status: string; // 'active' | 'blocked'
+  status: string; // 'pending' | 'active' | 'blocked'
 
   @Column({ nullable: true })
   avatar: string;

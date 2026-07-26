@@ -4,6 +4,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { ValidationPipe, BadRequestException } from '@nestjs/common';
 import { join } from 'path';
+import helmet from 'helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -30,6 +31,12 @@ async function bootstrap() {
     }),
   );
 
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' }, // allow static uploads
+    }),
+  );
+
   const allowedOrigins = (
     process.env.CORS_ORIGIN ?? 'http://localhost:5173,http://localhost:3000'
   )
@@ -41,6 +48,9 @@ async function bootstrap() {
     origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    maxAge: 86400,
+    optionsSuccessStatus: 204,
   });
 
   // Настройка статических файлов для изображений
@@ -48,14 +58,15 @@ async function bootstrap() {
     prefix: '/uploads/',
   });
 
-  const config = new DocumentBuilder()
-    .setTitle('NURRUS API')
-    .setDescription('API для интернет-магазина кухонь')
-    .setVersion('1.0')
-    .build();
-
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  if (process.env.NODE_ENV !== 'production') {
+    const config = new DocumentBuilder()
+      .setTitle('NURRUS API')
+      .setDescription('API для интернет-магазина кухонь')
+      .setVersion('1.0')
+      .build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api', app, document);
+  }
 
   await app.listen(process.env.PORT || 3001);
 }

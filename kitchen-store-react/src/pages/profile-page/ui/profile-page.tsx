@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "@/next/routerShim";
+import { API_URL } from "@/shared/config/api";
 
 interface UserProfile {
   id: number;
@@ -12,14 +13,24 @@ interface UserProfile {
   createdAt: string;
 }
 
+interface FormData {
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+}
+
 const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const [activeTab, setActiveTab] = useState<"profile" | "orders" | "settings">("profile");
+  const [formData, setFormData] = useState<FormData>({ name: "", email: "", phone: "", address: "" });
 
   useEffect(() => {
-    // Проверка авторизации
     const token = localStorage.getItem("token");
     const userData = localStorage.getItem("user");
 
@@ -28,10 +39,15 @@ const ProfilePage: React.FC = () => {
       return;
     }
 
-    // Парсим данные пользователя
     try {
       const parsedUser = JSON.parse(userData);
       setUser(parsedUser);
+      setFormData({
+        name: parsedUser.name || "",
+        email: parsedUser.email || "",
+        phone: parsedUser.phone || "",
+        address: parsedUser.address || "",
+      });
     } catch (error) {
       console.error("Ошибка парсинга данных пользователя:", error);
       localStorage.removeItem("user");
@@ -46,7 +62,47 @@ const ProfilePage: React.FC = () => {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    window.dispatchEvent(new Event("auth-change"));
     navigate("/");
+  };
+
+  const handleSave = async () => {
+    if (!user) return;
+    setSaving(true);
+    setSaveError(null);
+    setSaveSuccess(false);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_URL}/users/${user.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(formData),
+      });
+      if (!res.ok) throw new Error("Ошибка при сохранении");
+      const updated = await res.json();
+      setUser(updated);
+      localStorage.setItem("user", JSON.stringify(updated));
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (e: unknown) {
+      setSaveError(e instanceof Error ? e.message : "Ошибка при сохранении");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    if (!user) return;
+    setFormData({
+      name: user.name || "",
+      email: user.email || "",
+      phone: user.phone || "",
+      address: user.address || "",
+    });
+    setSaveError(null);
   };
 
   if (loading) {
@@ -119,58 +175,63 @@ const ProfilePage: React.FC = () => {
 
                   <div className="space-y-6">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Имя
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Имя</label>
                       <input
                         type="text"
-                        value={user.name}
-                        readOnly
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                        value={formData.name}
+                        onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4b8839]"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Email
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
                       <input
                         type="email"
-                        value={user.email}
-                        readOnly
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                        value={formData.email}
+                        onChange={(e) => setFormData((p) => ({ ...p, email: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4b8839]"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Телефон
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Телефон</label>
                       <input
                         type="tel"
-                        value={user.phone || ""}
+                        value={formData.phone}
+                        onChange={(e) => setFormData((p) => ({ ...p, phone: e.target.value }))}
                         placeholder="Не указан"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4b8839]"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Адрес доставки
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Адрес доставки</label>
                       <textarea
-                        value={user.address || ""}
+                        value={formData.address}
+                        onChange={(e) => setFormData((p) => ({ ...p, address: e.target.value }))}
                         placeholder="Не указан"
                         rows={3}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4b8839]"
                       />
                     </div>
 
+                    {saveError && <p className="text-red-500 text-sm">{saveError}</p>}
+                    {saveSuccess && <p className="text-green-600 text-sm">Данные успешно сохранены</p>}
+
                     <div className="flex gap-4">
-                      <button className="px-6 py-2 bg-[#4b8839] text-white rounded-lg hover:bg-[#4b8839] transition-colors">
-                        Сохранить изменения
+                      <button
+                        onClick={handleSave}
+                        disabled={saving}
+                        className="px-6 py-2 bg-[#4b8839] text-white rounded-lg hover:bg-[#3a6b2b] transition-colors disabled:opacity-60"
+                      >
+                        {saving ? "Сохранение..." : "Сохранить изменения"}
                       </button>
-                      <button className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                      <button
+                        onClick={handleCancel}
+                        disabled={saving}
+                        className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                      >
                         Отмена
                       </button>
                     </div>

@@ -45,6 +45,9 @@ export class Order {
     price: number;
     quantity: number;
     image?: string;
+    ownerId?: number | null;
+    ownerNameSnapshot?: string | null;
+    ownerRoleSnapshot?: string | null;
   }>;
 
   @Column('decimal', { precision: 10, scale: 2 })

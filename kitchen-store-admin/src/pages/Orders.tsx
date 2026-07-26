@@ -9,14 +9,17 @@ import {
   Input,
   message,
   Badge,
+  Space,
 } from 'antd';
 import type { BadgeProps } from 'antd';
 import {
   EyeOutlined,
   SearchOutlined,
   ReloadOutlined,
+  DownloadOutlined,
 } from '@ant-design/icons';
 import { api } from '../lib/api';
+import { getCurrentAdminUser } from '../lib/auth';
 
 const { Option } = Select;
 
@@ -33,30 +36,49 @@ interface Order {
     name: string;
     price: number;
     quantity: number;
+    ownerId?: number | null;
   }>;
   total: number;
+  sellerTotal?: number;
   status: 'pending' | 'processing' | 'shipping' | 'completed' | 'cancelled';
   paymentStatus: 'pending' | 'paid' | 'refunded';
   createdAt: string;
 }
 
 const OrdersPage: React.FC = () => {
+  const currentUser = getCurrentAdminUser();
+  const isAdmin = currentUser?.role === 'admin';
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | undefined>();
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<string | undefined>();
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 20,
+    total: 0,
+  });
 
   useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [pagination.current, pagination.pageSize, statusFilter, paymentStatusFilter]);
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (search?: string) => {
     setLoading(true);
     try {
-      const response = await api.get('/orders');
-      setOrders(response.data);
+      const response = await api.get('/orders/admin/list', {
+        params: {
+          page: pagination.current,
+          limit: pagination.pageSize,
+          search: (search ?? searchText) || undefined,
+          status: statusFilter || undefined,
+          paymentStatus: paymentStatusFilter || undefined,
+        },
+      });
+      setOrders(response.data?.data || []);
+      setPagination((prev) => ({ ...prev, total: response.data?.total || 0 }));
     } catch (error) {
       message.error('Ошибка загрузки заказов');
       console.error(error);
@@ -72,7 +94,7 @@ const OrdersPage: React.FC = () => {
 
   const handleStatusChange = async (orderId: number, newStatus: Order['status']) => {
     try {
-      await api.put(`/orders/${orderId}/status`, {
+      await api.put(`/orders/admin/${orderId}/status`, {
         status: newStatus,
       });
       message.success('Статус заказа обновлен');
@@ -111,13 +133,63 @@ const OrdersPage: React.FC = () => {
     refunded: 'Возврат',
   };
 
-  const filteredOrders = orders.filter((order) => {
-    const matchesSearch =
-      order.orderNumber.toLowerCase().includes(searchText.toLowerCase()) ||
-      order.customerName.toLowerCase().includes(searchText.toLowerCase());
-    const matchesStatus = !statusFilter || order.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const handleSearch = () => {
+    setPagination((prev) => ({ ...prev, current: 1 }));
+    fetchOrders(searchText);
+  };
+
+  const handleExport = async () => {
+    try {
+      const response = await api.get('/orders/admin/list', {
+        params: {
+          page: 1,
+          limit: 1000,
+          search: searchText || undefined,
+          status: statusFilter || undefined,
+          paymentStatus: paymentStatusFilter || undefined,
+        },
+      });
+
+      const rows = (response.data?.data || []) as Order[];
+      const header = [
+        'ID',
+        'Номер заказа',
+        'Клиент',
+        'Email',
+        'Телефон',
+        'Статус',
+        'Оплата',
+        'Сумма',
+        'Дата',
+      ];
+
+      const csvRows = rows.map((order) => [
+        order.id,
+        order.orderNumber,
+        order.customerName,
+        order.customerEmail,
+        order.customerPhone,
+        statusTexts[order.status],
+        paymentStatusTexts[order.paymentStatus],
+        (isAdmin ? order.total : order.sellerTotal || 0).toFixed(2),
+        new Date(order.createdAt).toISOString(),
+      ]);
+
+      const content = [header, ...csvRows]
+        .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+        .join('\n');
+
+      const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `orders-${new Date().toISOString().slice(0, 10)}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      message.error('Ошибка экспорта заказов');
+    }
+  };
 
   const columns = [
     {
@@ -146,7 +218,8 @@ const OrdersPage: React.FC = () => {
       dataIndex: 'total',
       key: 'total',
       width: 150,
-      render: (value: number) => `${value?.toLocaleString('ru-RU')} ₽`,
+      render: (_: number, record: Order) =>
+        `${Number(isAdmin ? record.total : record.sellerTotal || 0).toLocaleString('ru-RU')} ₽`,
     },
     {
       title: 'Статус заказа',
@@ -209,10 +282,15 @@ const OrdersPage: React.FC = () => {
   return (
     <div>
       <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
-        <h1 style={{ margin: 0 }}>Заказы</h1>
-        <Button icon={<ReloadOutlined />} onClick={fetchOrders}>
-          Обновить
-        </Button>
+        <h1 style={{ margin: 0 }}>{isAdmin ? 'Заказы' : 'Мои заказы'}</h1>
+        <Space>
+          <Button icon={<DownloadOutlined />} onClick={handleExport}>
+            Экспорт
+          </Button>
+          <Button icon={<ReloadOutlined />} onClick={() => fetchOrders()}>
+            Обновить
+          </Button>
+        </Space>
       </div>
 
       <div style={{ marginBottom: 16, display: 'flex', gap: 16 }}>
@@ -221,14 +299,19 @@ const OrdersPage: React.FC = () => {
           prefix={<SearchOutlined />}
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
-          style={{ width: 300 }}
+          onPressEnter={handleSearch}
+          style={{ width: 320 }}
         />
+        <Button onClick={handleSearch}>Найти</Button>
         <Select
           placeholder="Фильтр по статусу"
           allowClear
           style={{ width: 200 }}
           value={statusFilter}
-          onChange={setStatusFilter}
+          onChange={(value) => {
+            setStatusFilter(value);
+            setPagination((prev) => ({ ...prev, current: 1 }));
+          }}
         >
           <Option value="pending">Ожидает</Option>
           <Option value="processing">Обработка</Option>
@@ -236,14 +319,38 @@ const OrdersPage: React.FC = () => {
           <Option value="completed">Завершен</Option>
           <Option value="cancelled">Отменен</Option>
         </Select>
+        <Select
+          placeholder="Фильтр по оплате"
+          allowClear
+          style={{ width: 200 }}
+          value={paymentStatusFilter}
+          onChange={(value) => {
+            setPaymentStatusFilter(value);
+            setPagination((prev) => ({ ...prev, current: 1 }));
+          }}
+        >
+          <Option value="pending">Ожидает оплаты</Option>
+          <Option value="paid">Оплачен</Option>
+          <Option value="refunded">Возврат</Option>
+        </Select>
       </div>
 
       <Table
         columns={columns}
-        dataSource={filteredOrders}
+        dataSource={orders}
         rowKey="id"
         scroll={{ x: 1200 }}
         loading={loading}
+        pagination={{
+          ...pagination,
+          onChange: (page, pageSize) => {
+            setPagination((prev) => ({
+              ...prev,
+              current: page,
+              pageSize: pageSize || prev.pageSize,
+            }));
+          },
+        }}
       />
 
       <Modal
@@ -279,7 +386,12 @@ const OrdersPage: React.FC = () => {
                 {selectedOrder.items?.length}
               </Descriptions.Item>
               <Descriptions.Item label="Сумма">
-                <strong>{selectedOrder.total?.toLocaleString('ru-RU')} ₽</strong>
+                <strong>
+                  {Number(
+                    isAdmin ? selectedOrder.total : selectedOrder.sellerTotal || 0,
+                  ).toLocaleString('ru-RU')}{' '}
+                  ₽
+                </strong>
               </Descriptions.Item>
               <Descriptions.Item label="Статус заказа">
                 <Badge

@@ -9,6 +9,7 @@ import {
   ParseIntPipe,
   UseInterceptors,
   UploadedFile,
+  UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -16,8 +17,13 @@ import { extname } from 'path';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @Controller('users')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('admin')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
@@ -68,6 +74,11 @@ export class UsersController {
   @Put(':id/toggle-status')
   toggleStatus(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.toggleStatus(id);
+  }
+
+  @Put(':id/approve-seller')
+  approveSeller(@Param('id', ParseIntPipe) id: number) {
+    return this.usersService.approveSeller(id);
   }
 
   @Delete(':id')

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
   Table,
   Button,
@@ -25,6 +25,7 @@ import {
 import type { ColumnsType } from 'antd/es/table';
 import type { UploadFile } from 'antd/es/upload/interface';
 import { API_URL, api } from '../lib/api';
+import { getCurrentAdminUser } from '../lib/auth';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -41,6 +42,9 @@ interface Product {
   rating?: number;
   reviews_count?: number;
   specifications?: Record<string, unknown>;
+  ownerId?: number | null;
+  moderationStatus?: 'draft' | 'pending' | 'approved' | 'rejected';
+  moderationComment?: string | null;
 }
 
 interface Category {
@@ -59,29 +63,46 @@ interface ProductFormValues {
   is_available?: boolean;
 }
 
+type BulkPriceStockFormValues = {
+  priceMode?: 'set' | 'delta';
+  priceValue?: number;
+  stockMode?: 'set' | 'delta';
+  stockValue?: number;
+};
+
 const ProductsPage: React.FC = () => {
+  const currentUser = getCurrentAdminUser();
+  const isAdmin = currentUser?.role === 'admin';
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [searchText, setSearchText] = useState('');
+  const [moderationFilter, setModerationFilter] = useState<string | undefined>();
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
   const [form] = Form.useForm();
+  const [bulkForm] = Form.useForm<BulkPriceStockFormValues>();
+  const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
+  const [isBulkPriceStockModalOpen, setIsBulkPriceStockModalOpen] = useState(false);
+  const [isBulkRejectModalOpen, setIsBulkRejectModalOpen] = useState(false);
+  const [bulkRejectReason, setBulkRejectReason] = useState('');
+  const importInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     fetchProducts();
     fetchCategories();
-  }, [pagination.current, searchText]);
+  }, [pagination.current, searchText, moderationFilter]);
 
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/products', {
+      const response = await api.get('/products/admin/list', {
         params: {
           page: pagination.current,
           limit: pagination.pageSize,
           search: searchText || undefined,
+          moderationStatus: moderationFilter || undefined,
         },
       });
       setProducts(response.data.data);
@@ -126,6 +147,117 @@ const ProductsPage: React.FC = () => {
     }
   };
 
+  const handleSubmitForModeration = async (id: number) => {
+    try {
+      await api.post(`/products/${id}/submit-moderation`);
+      message.success('Товар отправлен на модерацию');
+      fetchProducts();
+    } catch (error: any) {
+      message.error(error?.response?.data?.message || 'Ошибка отправки на модерацию');
+    }
+  };
+
+  const handleApprove = async (id: number) => {
+    try {
+      await api.put(`/products/admin/${id}/approve`);
+      message.success('Товар одобрен');
+      fetchProducts();
+    } catch (error: any) {
+      message.error(error?.response?.data?.message || 'Ошибка одобрения');
+    }
+  };
+
+  const handleReject = async (id: number, reason?: string) => {
+    try {
+      await api.put(`/products/admin/${id}/reject`, { reason });
+      message.success('Товар отклонен');
+      fetchProducts();
+    } catch (error: any) {
+      message.error(error?.response?.data?.message || 'Ошибка отклонения');
+    }
+  };
+
+  const handleBulkSubmitForModeration = async () => {
+    if (!selectedProductIds.length) {
+      message.warning('Выберите товары');
+      return;
+    }
+
+    try {
+      await api.post('/products/admin/bulk/submit-moderation', {
+        productIds: selectedProductIds,
+      });
+      message.success('Товары отправлены на модерацию');
+      setSelectedProductIds([]);
+      fetchProducts();
+    } catch (error: any) {
+      message.error(error?.response?.data?.message || 'Ошибка массовой отправки');
+    }
+  };
+
+  const handleBulkApprove = async () => {
+    if (!selectedProductIds.length) {
+      message.warning('Выберите товары');
+      return;
+    }
+
+    try {
+      await api.put('/products/admin/bulk/approve', {
+        productIds: selectedProductIds,
+      });
+      message.success('Товары одобрены');
+      setSelectedProductIds([]);
+      fetchProducts();
+    } catch (error: any) {
+      message.error(error?.response?.data?.message || 'Ошибка массового одобрения');
+    }
+  };
+
+  const handleBulkReject = async () => {
+    if (!selectedProductIds.length) {
+      message.warning('Выберите товары');
+      return;
+    }
+
+    try {
+      await api.put('/products/admin/bulk/reject', {
+        productIds: selectedProductIds,
+        reason: bulkRejectReason || undefined,
+      });
+      message.success('Товары отклонены');
+      setIsBulkRejectModalOpen(false);
+      setBulkRejectReason('');
+      setSelectedProductIds([]);
+      fetchProducts();
+    } catch (error: any) {
+      message.error(error?.response?.data?.message || 'Ошибка массового отклонения');
+    }
+  };
+
+  const handleBulkUpdatePriceStock = async (values: BulkPriceStockFormValues) => {
+    if (!selectedProductIds.length) {
+      message.warning('Выберите товары');
+      return;
+    }
+
+    try {
+      await api.put('/products/admin/bulk/price-stock', {
+        productIds: selectedProductIds,
+        priceMode: values.priceMode,
+        priceValue: values.priceValue,
+        stockMode: values.stockMode,
+        stockValue: values.stockValue,
+      });
+      message.success('Массовое обновление выполнено');
+      setIsBulkPriceStockModalOpen(false);
+      bulkForm.resetFields();
+      setSelectedProductIds([]);
+      fetchProducts();
+    } catch (error: any) {
+      message.error(error?.response?.data?.message || 'Ошибка массового обновления');
+    }
+  };
+
   const handleSubmit = async (values: ProductFormValues) => {
     try {
       if (values.specifications) {
@@ -167,12 +299,64 @@ const ProductsPage: React.FC = () => {
     }
   };
 
-  const handleExport = () => {
-    message.info('Экспорт в разработке');
+  const handleExport = async () => {
+    try {
+      const response = await api.get('/products/admin/export', {
+        params: {
+          search: searchText || undefined,
+          moderationStatus: moderationFilter || undefined,
+        },
+        responseType: 'blob',
+      });
+
+      const blob = new Blob([response.data], {
+        type: 'text/csv;charset=utf-8;',
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `products-${new Date().toISOString().slice(0, 10)}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+      message.success('Экспорт выполнен');
+    } catch {
+      message.error('Ошибка экспорта');
+    }
   };
 
   const handleImport = () => {
-    message.info('Импорт в разработке');
+    importInputRef.current?.click();
+  };
+
+  const handleImportFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+
+    if (!file) {
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await api.post('/products/admin/import', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const errors = response.data?.errors as string[] | undefined;
+      if (errors?.length) {
+        message.warning(
+          `Импортированo: ${response.data?.createdCount}. Ошибок: ${errors.length}`,
+        );
+      } else {
+        message.success(`Импортировано товаров: ${response.data?.createdCount || 0}`);
+      }
+      fetchProducts();
+    } catch (error: any) {
+      message.error(error?.response?.data?.message || 'Ошибка импорта');
+    }
   };
 
   const columns: ColumnsType<Product> = [
@@ -237,9 +421,41 @@ const ProductsPage: React.FC = () => {
       ),
     },
     {
+      title: 'Модерация',
+      dataIndex: 'moderationStatus',
+      key: 'moderationStatus',
+      width: 170,
+      render: (status: Product['moderationStatus'], record: Product) => {
+        const colorMap: Record<string, string> = {
+          draft: 'default',
+          pending: 'gold',
+          approved: 'green',
+          rejected: 'red',
+        };
+        const textMap: Record<string, string> = {
+          draft: 'Черновик',
+          pending: 'На модерации',
+          approved: 'Одобрен',
+          rejected: 'Отклонен',
+        };
+        return (
+          <div>
+            <Tag color={colorMap[status || 'draft']}>
+              {textMap[status || 'draft']}
+            </Tag>
+            {record.moderationComment ? (
+              <div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 4 }}>
+                {record.moderationComment}
+              </div>
+            ) : null}
+          </div>
+        );
+      },
+    },
+    {
       title: 'Действия',
       key: 'actions',
-      width: 120,
+      width: 260,
       fixed: 'right',
       render: (_, record) => (
         <Space>
@@ -256,15 +472,65 @@ const ProductsPage: React.FC = () => {
           >
             <Button type="link" danger icon={<DeleteOutlined />} />
           </Popconfirm>
+          {!isAdmin &&
+          (record.moderationStatus === 'draft' ||
+            record.moderationStatus === 'rejected') ? (
+            <Button type="link" onClick={() => handleSubmitForModeration(record.id)}>
+              На модерацию
+            </Button>
+          ) : null}
+          {isAdmin && record.moderationStatus === 'pending' ? (
+            <>
+              <Button type="link" onClick={() => handleApprove(record.id)}>
+                Одобрить
+              </Button>
+              <Button
+                type="link"
+                danger
+                onClick={() => {
+                  let reason = '';
+                  Modal.confirm({
+                    title: 'Отклонить товар',
+                    content: (
+                      <Input.TextArea
+                        rows={3}
+                        placeholder="Причина отклонения"
+                        onChange={(event) => {
+                          reason = event.target.value;
+                        }}
+                      />
+                    ),
+                    onOk: () => handleReject(record.id, reason),
+                    okText: 'Отклонить',
+                    cancelText: 'Отмена',
+                    okButtonProps: { danger: true },
+                  });
+                }}
+              >
+                Отклонить
+              </Button>
+            </>
+          ) : null}
         </Space>
       ),
     },
   ];
 
+  if (isAdmin) {
+    columns.splice(columns.length - 1, 0, {
+      title: 'Владелец',
+      dataIndex: 'ownerId',
+      key: 'ownerId',
+      width: 120,
+      render: (ownerId: number | null | undefined) =>
+        ownerId ? `#${ownerId}` : 'Система',
+    });
+  }
+
   return (
     <div>
       <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
-        <h1 style={{ margin: 0 }}>Товары</h1>
+        <h1 style={{ margin: 0 }}>{isAdmin ? 'Товары' : 'Мои товары'}</h1>
         <Space>
           <Button icon={<UploadOutlined />} onClick={handleImport}>
             Импорт
@@ -277,15 +543,74 @@ const ProductsPage: React.FC = () => {
           </Button>
         </Space>
       </div>
+      <input
+        ref={importInputRef}
+        type="file"
+        accept=".csv,text/csv"
+        style={{ display: 'none' }}
+        onChange={handleImportFileChange}
+      />
+
+      <div style={{ marginBottom: 12 }}>
+        <Space wrap>
+          <Tag color={selectedProductIds.length ? 'blue' : 'default'}>
+            Выбрано: {selectedProductIds.length}
+          </Tag>
+          {!isAdmin ? (
+            <Button
+              disabled={!selectedProductIds.length}
+              onClick={handleBulkSubmitForModeration}
+            >
+              Массово на модерацию
+            </Button>
+          ) : (
+            <>
+              <Button disabled={!selectedProductIds.length} onClick={handleBulkApprove}>
+                Массово одобрить
+              </Button>
+              <Button
+                danger
+                disabled={!selectedProductIds.length}
+                onClick={() => setIsBulkRejectModalOpen(true)}
+              >
+                Массово отклонить
+              </Button>
+            </>
+          )}
+          <Button
+            disabled={!selectedProductIds.length}
+            onClick={() => setIsBulkPriceStockModalOpen(true)}
+          >
+            Массово изменить цену/остаток
+          </Button>
+          <Button disabled={!selectedProductIds.length} onClick={() => setSelectedProductIds([])}>
+            Сбросить выбор
+          </Button>
+        </Space>
+      </div>
 
       <div style={{ marginBottom: 16 }}>
-        <Input
-          placeholder="Поиск товаров..."
-          prefix={<SearchOutlined />}
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-          style={{ width: 300 }}
-        />
+        <Space>
+          <Input
+            placeholder="Поиск товаров..."
+            prefix={<SearchOutlined />}
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            style={{ width: 300 }}
+          />
+          <Select
+            allowClear
+            placeholder="Фильтр модерации"
+            value={moderationFilter}
+            onChange={(value) => setModerationFilter(value)}
+            style={{ width: 220 }}
+          >
+            <Option value="draft">Черновик</Option>
+            <Option value="pending">На модерации</Option>
+            <Option value="approved">Одобрен</Option>
+            <Option value="rejected">Отклонен</Option>
+          </Select>
+        </Space>
       </div>
 
       <Table
@@ -293,6 +618,10 @@ const ProductsPage: React.FC = () => {
         dataSource={products}
         loading={loading}
         rowKey="id"
+        rowSelection={{
+          selectedRowKeys: selectedProductIds,
+          onChange: (keys) => setSelectedProductIds(keys as number[]),
+        }}
         pagination={{
           ...pagination,
           onChange: (page, pageSize) => {
@@ -305,6 +634,58 @@ const ProductsPage: React.FC = () => {
         }}
         scroll={{ x: 1200 }}
       />
+
+      <Modal
+        title="Массовое изменение цены и остатка"
+        open={isBulkPriceStockModalOpen}
+        onCancel={() => setIsBulkPriceStockModalOpen(false)}
+        onOk={() => bulkForm.submit()}
+        okText="Применить"
+        cancelText="Отмена"
+      >
+        <Form<BulkPriceStockFormValues>
+          form={bulkForm}
+          layout="vertical"
+          onFinish={handleBulkUpdatePriceStock}
+        >
+          <Form.Item name="priceMode" label="Режим изменения цены">
+            <Select allowClear placeholder="Не менять цену">
+              <Option value="set">Установить значение</Option>
+              <Option value="delta">Изменить на значение (+/-)</Option>
+            </Select>
+          </Form.Item>
+          <Form.Item name="priceValue" label="Значение цены">
+            <InputNumber style={{ width: '100%' }} />
+          </Form.Item>
+
+          <Form.Item name="stockMode" label="Режим изменения остатка">
+            <Select allowClear placeholder="Не менять остаток">
+              <Option value="set">Установить значение</Option>
+              <Option value="delta">Изменить на значение (+/-)</Option>
+            </Select>
+          </Form.Item>
+          <Form.Item name="stockValue" label="Значение остатка">
+            <InputNumber style={{ width: '100%' }} />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="Массовое отклонение товаров"
+        open={isBulkRejectModalOpen}
+        onCancel={() => setIsBulkRejectModalOpen(false)}
+        onOk={handleBulkReject}
+        okText="Отклонить"
+        cancelText="Отмена"
+        okButtonProps={{ danger: true }}
+      >
+        <Input.TextArea
+          rows={4}
+          placeholder="Причина отклонения (опционально)"
+          value={bulkRejectReason}
+          onChange={(event) => setBulkRejectReason(event.target.value)}
+        />
+      </Modal>
 
       <Modal
         title={editingProduct ? 'Редактировать товар' : 'Создать товар'}

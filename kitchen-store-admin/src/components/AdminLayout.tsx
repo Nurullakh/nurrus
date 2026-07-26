@@ -11,10 +11,13 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   LogoutOutlined,
+  StarOutlined,
+  DollarOutlined,
 } from '@ant-design/icons';
 import { Layout, Menu, Button, theme, Avatar, Dropdown } from 'antd';
 import type { MenuProps } from 'antd';
 import { ADMIN_TOKEN_KEY, ADMIN_USER_KEY } from '../lib/api';
+import { getCurrentAdminUser } from '../lib/auth';
 
 const { Header, Sider, Content } = Layout;
 
@@ -25,10 +28,12 @@ const AdminLayout: React.FC = () => {
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
+  const currentUser = getCurrentAdminUser();
+  const isAdmin = currentUser?.role === 'admin';
 
-  const menuItems: MenuProps['items'] = [
+  const adminMenuItems: MenuProps['items'] = [
     {
-      key: '/admin/dashboard',
+      key: '/admin',
       icon: <BarChartOutlined />,
       label: 'Дашборд',
     },
@@ -53,6 +58,11 @@ const AdminLayout: React.FC = () => {
       label: 'Заказы',
     },
     {
+      key: '/admin/finance',
+      icon: <DollarOutlined />,
+      label: 'Финансы',
+    },
+    {
       key: '/admin/promotions',
       icon: <GiftOutlined />,
       label: 'Акции и скидки',
@@ -67,7 +77,42 @@ const AdminLayout: React.FC = () => {
       icon: <UserOutlined />,
       label: 'Пользователи',
     },
+    {
+      key: '/admin/reviews',
+      icon: <StarOutlined />,
+      label: 'Отзывы',
+    },
   ];
+
+  const sellerMenuItems: MenuProps['items'] = [
+    {
+      key: '/admin',
+      icon: <BarChartOutlined />,
+      label: 'Дашборд',
+    },
+    {
+      key: '/admin/analytics',
+      icon: <BarChartOutlined />,
+      label: 'Аналитика',
+    },
+    {
+      key: '/admin/orders',
+      icon: <TagsOutlined />,
+      label: 'Мои заказы',
+    },
+    {
+      key: '/admin/finance',
+      icon: <DollarOutlined />,
+      label: 'Финансы',
+    },
+    {
+      key: '/admin/products',
+      icon: <ShoppingOutlined />,
+      label: 'Мои товары',
+    },
+  ];
+
+  const menuItems = isAdmin ? adminMenuItems : sellerMenuItems;
 
   const handleUserMenuClick = ({ key }: { key: string }) => {
     if (key === 'logout') {
@@ -140,7 +185,7 @@ const AdminLayout: React.FC = () => {
           >
             <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
               <Avatar icon={<UserOutlined />} />
-              <span>Администратор</span>
+              <span>{currentUser?.name || 'Пользователь'}</span>
             </div>
           </Dropdown>
         </Header>

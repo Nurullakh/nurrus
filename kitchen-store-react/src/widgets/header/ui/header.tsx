@@ -9,6 +9,14 @@ import SearchModal from "./search-modal";
 const Header: React.FC = () => {
   const navigate = useNavigate();
   const [isSearchOpen, setIsSearchOpen] = React.useState(false);
+  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+
+  React.useEffect(() => {
+    const sync = () => setIsLoggedIn(!!localStorage.getItem("token"));
+    sync();
+    window.addEventListener("auth-change", sync);
+    return () => window.removeEventListener("auth-change", sync);
+  }, []);
 
   const cartItems = useSelector((state: RootState) => state.cart.items);
   const favoriteItems = useSelector((state: RootState) => state.favorites.items);
@@ -84,11 +92,10 @@ const Header: React.FC = () => {
                   </span>
                 )}
               </div>
-              <span className="text-xs hidden lg:block">Избранное</span>
             </Link>
 
             <button
-              onClick={() => navigate("/login")}
+              onClick={() => navigate(isLoggedIn ? "/profile" : "/login")}
               className="flex flex-col items-center gap-1 hover:text-[#4b8839] transition-colors group"
             >
               <svg
@@ -104,7 +111,6 @@ const Header: React.FC = () => {
                   d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                 />
               </svg>
-              <span className="text-xs hidden lg:block">Войти</span>
             </button>
 
             <Link
@@ -131,7 +137,6 @@ const Header: React.FC = () => {
                   </span>
                 )}
               </div>
-              <span className="text-xs hidden lg:block">Корзина</span>
             </Link>
           </div>
         </div>

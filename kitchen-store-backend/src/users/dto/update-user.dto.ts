@@ -26,11 +26,11 @@ export class UpdateUserDto {
   phone?: string;
 
   @IsOptional()
-  @IsIn(['admin', 'manager', 'customer'])
+  @IsIn(['admin', 'seller', 'manager', 'customer'])
   role?: string;
 
   @IsOptional()
-  @IsIn(['active', 'blocked'])
+  @IsIn(['pending', 'active', 'blocked'])
   status?: string;
 
   @IsOptional()

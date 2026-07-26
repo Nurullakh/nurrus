@@ -19,6 +19,23 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
+  private buildAuthResponse(user: User) {
+    const payload = { sub: user.id, email: user.email, role: user.role };
+    const access_token = this.jwtService.sign(payload);
+
+    return {
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        status: user.status,
+      },
+      access_token,
+    };
+  }
+
   async register(registerDto: RegisterDto) {
     const normalizedEmail = registerDto.email.trim().toLowerCase();
 
@@ -50,28 +67,42 @@ export class AuthService {
 
     const savedUser = await this.usersRepository.save(user);
 
-    // Генерируем JWT токен
-    const payload = {
-      sub: savedUser.id,
-      email: savedUser.email,
-      role: savedUser.role,
-    };
-    const access_token = this.jwtService.sign(payload);
+    return this.buildAuthResponse(savedUser);
+  }
 
-    const result = {
-      user: {
-        id: savedUser.id,
-        name: savedUser.name,
-        email: savedUser.email,
-        phone: savedUser.phone,
-        role: savedUser.role,
-        status: savedUser.status,
-      },
-      access_token,
-    };
+  async registerSeller(registerDto: RegisterDto) {
+    const normalizedEmail = registerDto.email.trim().toLowerCase();
 
-    console.log('🔐 Register SUCCESS - отправляем:', JSON.stringify(result));
-    return result;
+    let existingUser = await this.usersRepository.findOne({
+      where: { email: normalizedEmail },
+    });
+
+    if (!existingUser) {
+      existingUser = await this.usersRepository
+        .createQueryBuilder('user')
+        .where('LOWER(user.email) = LOWER(:email)', { email: normalizedEmail })
+        .getOne();
+    }
+
+    if (existingUser) {
+      throw new ConflictException('Пользователь с таким email уже существует');
+    }
+
+    const hashedPassword = await bcrypt.hash(registerDto.password, 10);
+
+    const user = this.usersRepository.create({
+      ...registerDto,
+      email: normalizedEmail,
+      password: hashedPassword,
+      role: 'seller',
+      status: 'pending',
+    });
+
+    await this.usersRepository.save(user);
+    return {
+      message:
+        'Заявка продавца отправлена. Дождитесь подтверждения администратором.',
+    };
   }
 
   async login(loginDto: LoginDto) {
@@ -104,28 +135,16 @@ export class AuthService {
       throw new UnauthorizedException('Неверный email или пароль');
     }
 
-    if (user.status === 'blocked') {
+    if (user.status !== 'active') {
+      if (user.status === 'pending') {
+        throw new UnauthorizedException(
+          'Аккаунт продавца ожидает подтверждения администратором',
+        );
+      }
       throw new UnauthorizedException('Ваш аккаунт заблокирован');
     }
 
-    // Генерируем JWT токен
-    const payload = { sub: user.id, email: user.email, role: user.role };
-    const access_token = this.jwtService.sign(payload);
-
-    const result = {
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        role: user.role,
-        status: user.status,
-      },
-      access_token,
-    };
-
-    console.log('🔐 Login SUCCESS - отправляем:', JSON.stringify(result));
-    return result;
+    return this.buildAuthResponse(user);
   }
 
   async validateUser(userId: number) {
@@ -144,7 +163,7 @@ export class AuthService {
       ],
     });
 
-    if (!user || user.status === 'blocked') {
+    if (!user || user.status !== 'active') {
       return null;
     }
 

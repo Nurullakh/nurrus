@@ -54,7 +54,7 @@ export class Review {
   @Column({ default: false })
   isModerated: boolean; // Проверено модератором
 
-  @Column({ default: true })
+  @Column({ default: false })
   isPublished: boolean; // Опубликовано
 
   @Column({ nullable: true })

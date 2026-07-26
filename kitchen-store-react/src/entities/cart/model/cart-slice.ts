@@ -2,7 +2,19 @@ import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import axios from "axios";
 import { API_URL, API_ROUTES } from "@/shared/config/api";
 
-const USER_ID = "guest";
+const getUserId = (): string => {
+  if (typeof window === "undefined") return "guest";
+  try {
+    const raw = localStorage.getItem("user");
+    if (raw && raw !== "undefined") {
+      const user = JSON.parse(raw);
+      if (user?.id) return String(user.id);
+    }
+  } catch {
+    // ignore
+  }
+  return "guest";
+};
 
 export interface CartItem {
   id: number;
@@ -39,7 +51,7 @@ export const fetchCart = createAsyncThunk(
   "cart/fetchCart",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${API_URL}${API_ROUTES.cart}?userId=${USER_ID}`);
+      const response = await axios.get(`${API_URL}${API_ROUTES.cart}?userId=${getUserId()}`);
       return response.data;
     } catch (error: unknown) {
       return rejectWithValue(getAxiosErrorMessage(error, "Ошибка загрузки корзины"));
@@ -63,7 +75,7 @@ export const addToCartAsync = createAsyncThunk(
         article: item.article,
         available: item.available,
         quantity: 1,
-        userId: USER_ID,
+        userId: getUserId(),
       });
       return response.data;
     } catch (error: unknown) {
@@ -80,7 +92,7 @@ export const updateQuantityAsync = createAsyncThunk(
   ) => {
     try {
       const response = await axios.put(
-        `${API_URL}${API_ROUTES.cart}/${id}/quantity?userId=${USER_ID}`,
+        `${API_URL}${API_ROUTES.cart}/${id}/quantity?userId=${getUserId()}`,
         { quantity }
       );
       return response.data;
@@ -94,7 +106,7 @@ export const removeFromCartAsync = createAsyncThunk(
   "cart/removeFromCart",
   async (id: number, { rejectWithValue }) => {
     try {
-      await axios.delete(`${API_URL}${API_ROUTES.cart}/${id}?userId=${USER_ID}`);
+      await axios.delete(`${API_URL}${API_ROUTES.cart}/${id}?userId=${getUserId()}`);
       return id;
     } catch (error: unknown) {
       return rejectWithValue(getAxiosErrorMessage(error, "Ошибка удаления из корзины"));
@@ -106,7 +118,7 @@ export const clearCartAsync = createAsyncThunk(
   "cart/clearCart",
   async (_, { rejectWithValue }) => {
     try {
-      await axios.delete(`${API_URL}${API_ROUTES.cart}?userId=${USER_ID}`);
+      await axios.delete(`${API_URL}${API_ROUTES.cart}?userId=${getUserId()}`);
       return true;
     } catch (error: unknown) {
       return rejectWithValue(getAxiosErrorMessage(error, "Ошибка очистки корзины"));

@@ -50,7 +50,7 @@ const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPage
       {generatePages().map((page, index) =>
         typeof page === "number" ? (
           <button
-            key={index}
+            key={page}
             onClick={() => onPageChange(page)}
             className={`px-3 py-1 rounded-md ${
               page === currentPage ? "border-[#4b8839] border-2 font-bold" : "border"
@@ -59,7 +59,7 @@ const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPage
             {page}
           </button>
         ) : (
-          <span key={index} className="px-3 py-1">
+          <span key={`ellipsis-${index}`} className="px-3 py-1">
             {page}
           </span>
         )

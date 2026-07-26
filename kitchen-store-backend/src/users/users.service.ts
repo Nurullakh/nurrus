@@ -122,6 +122,21 @@ export class UsersService {
     return await this.findOne(id);
   }
 
+  async approveSeller(id: number): Promise<User> {
+    const user = await this.findOne(id);
+
+    if (user.role !== 'seller') {
+      throw new ConflictException('Подтверждать можно только продавцов');
+    }
+
+    if (user.status !== 'pending') {
+      throw new ConflictException('Продавец уже подтвержден или заблокирован');
+    }
+
+    await this.usersRepository.update(id, { status: 'active' });
+    return await this.findOne(id);
+  }
+
   async getStatistics() {
     const totalUsers = await this.usersRepository.count();
     const activeUsers = await this.usersRepository.count({
@@ -133,12 +148,16 @@ export class UsersService {
     const customers = await this.usersRepository.count({
       where: { role: 'customer' },
     });
+    const sellers = await this.usersRepository.count({
+      where: { role: 'seller' },
+    });
 
     return {
       totalUsers,
       activeUsers,
       admins,
       customers,
+      sellers,
     };
   }
 }
