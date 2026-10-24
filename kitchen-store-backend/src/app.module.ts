@@ -60,7 +60,9 @@ import { FinanceModule } from './finance/finance.module';
         NewsletterSubscription,
         FinancePayout,
       ],
-      synchronize: process.env.NODE_ENV !== 'production',
+      synchronize:
+        process.env.NODE_ENV !== 'production' ||
+        process.env.SCHEMA_SYNC === '1',
       logging: process.env.NODE_ENV !== 'production',
     }),
     ProductsModule,

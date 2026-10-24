@@ -1,5 +1,7 @@
 # Kitchen Store Production Deploy
 
+For **Beget VPS** use: [`deployment/beget/README.ru.md`](./beget/README.ru.md)
+
 This folder contains ready-to-use deployment assets for:
 
 - `kitchen-store-backend` (NestJS, PM2)
